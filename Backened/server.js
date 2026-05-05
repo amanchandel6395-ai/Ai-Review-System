@@ -21,9 +21,9 @@ const openai = new OpenAI({
   baseURL: 'https://api.groq.com/openai/v1'
 });
 // ── MongoDB ──────────────────────────────────────────────────────────────────
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/qr-reviews')
+mongoose.connect(process.env.MONGO_URI)
   .then(async () => {
-    console.log('✅ MongoDB connected');
+    console.log('✅ MongoDB Connected');
     await seedDatabase();
   })
   .catch(err => console.error('❌ MongoDB connection error:', err));
@@ -46,7 +46,7 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json({ limit: '10kb' }));
-app.use(express.static(path.join(__dirname, '../frontend')));
+// app.use(express.static(path.join(__dirname, '../frontend')));
 
 // Rate limiters
 const generalLimiter = rateLimit({
@@ -294,17 +294,17 @@ app.get('/api/qr/:businessId/svg', async (req, res) => {
 });
 
 // SPA fallback — serve review.html for /review/* routes
-app.get('/review/*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend/review.html'));
-});
+// app.get('/review/*', (req, res) => {
+//   res.sendFile(path.join(__dirname, '../frontend/review.html'));
+// });
 
-app.get('/admin*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend/admin.html'));
-});
+// app.get('/admin*', (req, res) => {
+//   res.sendFile(path.join(__dirname, '../frontend/admin.html'));
+// });
 
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend/index.html'));
-});
+// app.get('/', (req, res) => {
+//   res.sendFile(path.join(__dirname, '../frontend/index.html'));
+// });
 
 // ── Start ────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
