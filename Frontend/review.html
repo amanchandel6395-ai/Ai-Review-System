@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+  <title>Zuit — Share Your Experience</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+
+  <style>
+/* ═══════════════════════════════════════════════════════
+   RESET & TOKENS
+═══════════════════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:        #070712;
+  --bg2:       #0C0C1E;
+  --surface:   rgba(255,255,255,0.04);
+  --surface2:  rgba(255,255,255,0.07);
+  --border:    rgba(255,255,255,0.08);
+  --teal:      #00E5CC;
+  --teal2:     #00BFAD;
+  --coral:     #FF5A35;
+  --coral2:    #FF8260;
+  --white:     #F0F4FF;
+  --muted:     rgba(200,210,240,0.45);
+  --muted2:    rgba(200,210,240,0.22);
+  --radius:    22px;
+  --radi-sm:   14px;
+  --radi-xs:   10px;
+  --ff-head:   'Syne',sans-serif;
+  --ff-body:   'Outfit',sans-serif;
+}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--white);
+  font-family:var(--ff-body);
+  min-height:100vh;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ═══════════════════════════════════════════════════════
+   ANIMATED MESH BACKGROUND
+═══════════════════════════════════════════════════════ */
+.mesh{
+  position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;
+}
+.orb{
+  position:absolute;border-radius:50%;filter:blur(80px);
+  animation:drift 18s ease-in-out infinite alternate;
+}
+.orb-1{width:500px;height:500px;background:rgba(0,229,204,0.07);top:-100px;left:-100px;animation-duration:20s}
+.orb-2{width:400px;height:400px;background:rgba(255,90,53,0.06);bottom:-80px;right:-80px;animation-duration:15s;animation-delay:-7s}
+.orb-3{width:300px;height:300px;background:rgba(0,180,255,0.05);top:40%;left:40%;animation-duration:25s;animation-delay:-12s}
+@keyframes drift{
+  0%{transform:translate(0,0) scale(1)}
+  50%{transform:translate(40px,-30px) scale(1.08)}
+  100%{transform:translate(-20px,50px) scale(0.95)}
+}
+
+/* ═══════════════════════════════════════════════════════
+   SPLASH SCREEN
+═══════════════════════════════════════════════════════ */
+#splash{
+  position:fixed;inset:0;z-index:1000;
+  background:var(--bg);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+  animation:splashOut 0.6s 2.2s cubic-bezier(.76,0,.24,1) forwards;
+}
+@keyframes splashOut{
+  0%{opacity:1;transform:scale(1)}
+  100%{opacity:0;transform:scale(1.04);pointer-events:none;visibility:hidden}
+}
+.splash-logo{
+  font-family:var(--ff-head);font-size:52px;font-weight:800;letter-spacing:-1px;
+  background:linear-gradient(135deg,var(--teal),var(--coral));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  animation:logoIn 0.8s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes logoIn{
+  from{opacity:0;transform:scale(0.6) translateY(20px)}
+  to{opacity:1;transform:scale(1) translateY(0)}
+}
+.splash-tagline{
+  font-size:14px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;
+  animation:fadeUp 0.6s 0.5s ease both;
+}
+.splash-ring{
+  width:64px;height:64px;border-radius:50%;
+  border:2px solid transparent;
+  border-top-color:var(--teal);border-right-color:var(--coral);
+  animation:spin 0.9s 0.3s linear both;
+  position:absolute;bottom:80px;
+}
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+
+/* ═══════════════════════════════════════════════════════
+   MAIN APP WRAPPER
+═══════════════════════════════════════════════════════ */
+#app{
+  max-width:460px;margin:0 auto;min-height:100vh;
+  position:relative;z-index:1;
+  opacity:0;animation:appIn 0.8s 2.5s ease forwards;
+}
+@keyframes appIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+/* ═══════════════════════════════════════════════════════
+   SKELETON
+═══════════════════════════════════════════════════════ */
+.skel{
+  background:linear-gradient(90deg,var(--bg2) 25%,rgba(255,255,255,0.06) 50%,var(--bg2) 75%);
+  background-size:200% 100%;
+  animation:shimmer 1.6s infinite;
+  border-radius:var(--radi-sm);
+}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* ═══════════════════════════════════════════════════════
+   HERO
+═══════════════════════════════════════════════════════ */
+.hero{
+  position:relative;height:280px;overflow:hidden;
+}
+.hero-img{
+  width:100%;height:100%;object-fit:cover;object-position:center;
+  transform:scale(1.08);transition:transform 6s ease;
+}
+.hero-img.loaded{transform:scale(1)}
+.hero-vignette{
+  position:absolute;inset:0;
+  background:linear-gradient(
+    180deg,
+    rgba(7,7,18,0.15) 0%,
+    rgba(7,7,18,0.4)  45%,
+    rgba(7,7,18,0.93) 82%,
+    var(--bg) 100%
+  );
+}
+.hero-body{
+  position:absolute;bottom:0;left:0;right:0;padding:0 20px 24px;
+}
+.zuit-pill{
+  display:inline-flex;align-items:center;gap:7px;
+  background:rgba(0,229,204,0.1);
+  border:1px solid rgba(0,229,204,0.25);
+  color:var(--teal);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  padding:5px 13px;border-radius:100px;margin-bottom:10px;
+  backdrop-filter:blur(10px);
+  animation:fadeUp .5s .3s ease both;
+}
+.zuit-pill::before{
+  content:'';width:6px;height:6px;background:var(--teal);border-radius:50%;
+  box-shadow:0 0 8px var(--teal);animation:blink 2s infinite;
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.hero-name{
+  font-family:var(--ff-head);font-size:clamp(24px,7vw,32px);font-weight:800;
+  color:#fff;line-height:1.1;letter-spacing:-.5px;
+  animation:fadeUp .5s .45s ease both;
+}
+.hero-desc{
+  font-size:13px;color:var(--muted);margin-top:5px;line-height:1.5;
+  animation:fadeUp .5s .6s ease both;
+}
+.hero-skel{height:280px;border-radius:0}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ═══════════════════════════════════════════════════════
+   ZUIT ABOUT STRIP
+═══════════════════════════════════════════════════════ */
+.zuit-about{
+  margin:0 16px;margin-top:-2px;
+  background:linear-gradient(135deg,rgba(0,229,204,0.07),rgba(255,90,53,0.07));
+  border:1px solid rgba(0,229,204,0.15);
+  border-radius:var(--radi-sm);padding:14px 16px;
+  display:flex;align-items:center;gap:14px;
+  animation:fadeUp .5s .75s ease both;opacity:0;animation-fill-mode:both;
+}
+.zuit-icon{
+  width:42px;height:42px;border-radius:12px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--teal),var(--coral));
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--ff-head);font-size:17px;font-weight:800;color:#050510;
+}
+.zuit-about-text{}
+.zuit-about-title{font-family:var(--ff-head);font-size:14px;font-weight:700;color:#fff}
+.zuit-about-sub{font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.45}
+
+/* ═══════════════════════════════════════════════════════
+   CARDS AREA
+═══════════════════════════════════════════════════════ */
+.cards{padding:14px 16px 40px;display:flex;flex-direction:column;gap:14px}
+
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:22px;
+  backdrop-filter:blur(16px);
+  opacity:0;transform:translateY(22px);
+  transition:opacity .5s ease,transform .5s ease,border-color .3s ease;
+}
+.card.in{opacity:1;transform:translateY(0)}
+.card:hover{border-color:rgba(0,229,204,0.15)}
+
+.card-label{
+  font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--teal);margin-bottom:18px;
+  display:flex;align-items:center;gap:8px;
+}
+.card-label::after{
+  content:'';flex:1;height:1px;
+  background:linear-gradient(to right,rgba(0,229,204,0.25),transparent);
+}
+
+/* ═══════════════════════════════════════════════════════
+   STARS
+═══════════════════════════════════════════════════════ */
+.stars-wrap{display:flex;justify-content:center;gap:6px;padding:4px 0 2px}
+.star-btn{
+  background:none;border:none;cursor:pointer;padding:6px;
+  border-radius:50%;outline:none;-webkit-tap-highlight-color:transparent;
+  position:relative;
+  transition:transform .2s cubic-bezier(.34,1.56,.64,1);
+}
+.star-btn:active{transform:scale(.82)!important}
+.star-svg{
+  width:48px;height:48px;display:block;
+  transition:all .25s cubic-bezier(.34,1.56,.64,1);
+  filter:drop-shadow(0 0 0 transparent);
+}
+.star-svg path{transition:fill .2s ease}
+.star-btn.lit .star-svg{transform:scale(1.18)}
+.star-btn.lit .star-svg path{fill:var(--teal);filter:drop-shadow(0 0 10px rgba(0,229,204,.7))}
+.star-btn:not(.lit) .star-svg path{fill:rgba(255,255,255,.1)}
+
+.rating-mood{
+  text-align:center;margin-top:14px;min-height:24px;
+  font-family:var(--ff-head);font-size:16px;font-weight:600;
+  background:linear-gradient(135deg,var(--teal),var(--coral));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  transition:all .3s ease;
+}
+
+/* Particle canvas */
+#particleCanvas{
+  position:fixed;inset:0;pointer-events:none;z-index:500;
+}
+
+/* ═══════════════════════════════════════════════════════
+   CHIPS
+═══════════════════════════════════════════════════════ */
+.q-block{margin-bottom:18px}
+.q-block:last-of-type{margin-bottom:0}
+.q-title{font-size:13px;font-weight:500;color:var(--white);margin-bottom:9px;opacity:.85}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{
+  background:var(--surface2);border:1px solid var(--border);
+  color:var(--muted);font-family:var(--ff-body);font-size:12.5px;font-weight:400;
+  padding:7px 14px;border-radius:100px;cursor:pointer;
+  transition:all .2s ease;outline:none;-webkit-tap-highlight-color:transparent;
+  animation:scaleIn .3s ease both;
+}
+.chip:active{transform:scale(.94)}
+.chip.on{
+  background:rgba(0,229,204,.12);
+  border-color:rgba(0,229,204,.4);
+  color:var(--teal);font-weight:600;
+}
+@keyframes scaleIn{from{opacity:0;transform:scale(.88)}to{opacity:1;transform:scale(1)}}
+
+/* ═══════════════════════════════════════════════════════
+   WRITE MODE TOGGLE
+═══════════════════════════════════════════════════════ */
+.mode-tabs{
+  display:flex;gap:4px;background:rgba(255,255,255,.04);
+  border:1px solid var(--border);border-radius:var(--radi-xs);padding:4px;
+  margin-bottom:16px;
+}
+.mode-tab{
+  flex:1;padding:9px;border-radius:7px;border:none;background:none;
+  font-family:var(--ff-body);font-size:13px;font-weight:500;
+  color:var(--muted);cursor:pointer;transition:all .2s ease;outline:none;
+}
+.mode-tab.active{
+  background:linear-gradient(135deg,rgba(0,229,204,.15),rgba(255,90,53,.1));
+  color:var(--white);border:1px solid rgba(0,229,204,.2);
+}
+
+.direct-textarea{
+  width:100%;background:rgba(255,255,255,.04);
+  border:1px solid var(--border);border-radius:var(--radi-sm);
+  color:var(--white);font-family:var(--ff-body);font-size:14px;line-height:1.6;
+  padding:14px;resize:none;min-height:100px;outline:none;
+  transition:border-color .3s ease;
+}
+.direct-textarea:focus{border-color:rgba(0,229,204,.35)}
+.direct-textarea::placeholder{color:var(--muted2)}
+
+/* ═══════════════════════════════════════════════════════
+   AI REVIEW SECTION
+═══════════════════════════════════════════════════════ */
+.ai-header{
+  display:flex;align-items:center;gap:10px;margin-bottom:14px;
+}
+.ai-badge{
+  display:flex;align-items:center;gap:6px;
+  background:linear-gradient(135deg,rgba(0,229,204,.1),rgba(255,90,53,.08));
+  border:1px solid rgba(0,229,204,.2);
+  color:var(--teal);font-size:11px;font-weight:600;letter-spacing:.08em;
+  padding:4px 11px;border-radius:100px;text-transform:uppercase;
+}
+.ai-badge svg{animation:spin2 3s linear infinite}
+@keyframes spin2{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+
+/* Typewriter text area */
+.review-box{
+  width:100%;background:rgba(255,255,255,.04);
+  border:1px solid rgba(0,229,204,.2);border-radius:var(--radi-sm);
+  color:var(--white);font-family:var(--ff-body);font-size:14px;line-height:1.65;
+  padding:16px;resize:vertical;min-height:110px;outline:none;
+  transition:border-color .3s ease;
+}
+.review-box:focus{border-color:rgba(0,229,204,.4)}
+.review-box::placeholder{color:var(--muted2)}
+
+.review-footer{
+  display:flex;align-items:center;justify-content:space-between;margin-top:10px;
+}
+.char-ct{font-size:11.5px;color:var(--muted)}
+.regen-btn{
+  display:flex;align-items:center;gap:5px;
+  background:none;border:1px solid var(--border);color:var(--muted);
+  font-family:var(--ff-body);font-size:12px;padding:5px 12px;
+  border-radius:100px;cursor:pointer;transition:all .2s ease;outline:none;
+}
+.regen-btn:hover{border-color:rgba(0,229,204,.3);color:var(--teal)}
+
+/* Loading dots */
+.dots-wrap{
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:12px;padding:28px;
+}
+.dots{display:flex;gap:7px}
+.dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--teal);animation:dotBounce 1.2s infinite;
+}
+.dot:nth-child(2){animation-delay:.15s;background:linear-gradient(var(--teal),var(--coral))}
+.dot:nth-child(3){animation-delay:.3s;background:var(--coral)}
+@keyframes dotBounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-9px)}}
+.dots-label{font-size:13px;color:var(--muted);font-weight:500}
+
+/* ═══════════════════════════════════════════════════════
+   BUTTONS
+═══════════════════════════════════════════════════════ */
+.btn-main{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  width:100%;padding:16px 24px;border-radius:var(--radi-sm);border:none;
+  font-family:var(--ff-body);font-size:15px;font-weight:600;
+  cursor:pointer;transition:all .3s ease;outline:none;
+  -webkit-tap-highlight-color:transparent;position:relative;overflow:hidden;
+}
+.btn-main::after{
+  content:'';position:absolute;inset:0;
+  background:rgba(255,255,255,0);transition:background .2s;
+}
+.btn-main:active::after{background:rgba(255,255,255,.12)}
+
+.btn-teal{
+  background:linear-gradient(135deg,var(--teal),var(--teal2));
+  color:#050510;
+}
+.btn-teal:not(:disabled):hover{
+  box-shadow:0 8px 28px rgba(0,229,204,.3);transform:translateY(-1px);
+}
+
+.btn-google{
+  background:linear-gradient(135deg,#4285F4,#34A853);
+  color:#fff;
+}
+.btn-google:not(:disabled):hover{
+  box-shadow:0 8px 28px rgba(66,133,244,.35);transform:translateY(-1px);
+}
+
+.btn-ghost{
+  background:transparent;border:1px solid var(--border);
+  color:var(--muted);
+}
+.btn-ghost:hover{border-color:rgba(255,255,255,.18);color:var(--white)}
+
+.btn-main:disabled{opacity:.35;cursor:not-allowed;transform:none!important}
+
+/* ═══════════════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════════════ */
+#toast{
+  position:fixed;bottom:28px;left:50%;
+  transform:translateX(-50%) translateY(80px);
+  background:rgba(12,12,30,.95);
+  border:1px solid var(--border);
+  color:var(--white);font-family:var(--ff-body);font-size:13.5px;font-weight:500;
+  padding:13px 22px;border-radius:100px;
+  display:flex;align-items:center;gap:9px;
+  z-index:600;opacity:0;white-space:nowrap;
+  transition:all .45s cubic-bezier(.34,1.56,.64,1);
+  box-shadow:0 12px 40px rgba(0,0,0,.5);backdrop-filter:blur(16px);
+}
+#toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+#toast.teal{border-color:rgba(0,229,204,.3)}
+#toast.coral{border-color:rgba(255,90,53,.3)}
+
+/* ═══════════════════════════════════════════════════════
+   SUCCESS OVERLAY
+═══════════════════════════════════════════════════════ */
+#success{
+  position:fixed;inset:0;z-index:700;
+  background:rgba(7,7,18,.94);backdrop-filter:blur(12px);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;
+  opacity:0;pointer-events:none;transition:opacity .4s ease;
+}
+#success.show{opacity:1;pointer-events:all}
+.s-ring{
+  width:88px;height:88px;border-radius:50%;
+  border:2px solid transparent;
+  background:linear-gradient(var(--bg),var(--bg)) padding-box,
+             linear-gradient(135deg,var(--teal),var(--coral)) border-box;
+  display:flex;align-items:center;justify-content:center;
+  animation:ringPulse 2.5s ease infinite;
+}
+@keyframes ringPulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(0,229,204,.3)}
+  50%{box-shadow:0 0 0 18px rgba(0,229,204,0)}
+}
+.s-title{
+  font-family:var(--ff-head);font-size:26px;font-weight:800;
+  background:linear-gradient(135deg,var(--teal),var(--coral));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.s-sub{font-size:14px;color:var(--muted);text-align:center;max-width:240px;line-height:1.5}
+.s-close{
+  margin-top:4px;background:none;border:1px solid var(--border);color:var(--muted);
+  font-family:var(--ff-body);font-size:14px;padding:10px 28px;
+  border-radius:100px;cursor:pointer;transition:all .2s ease;
+}
+.s-close:hover{border-color:var(--teal);color:var(--teal)}
+
+/* ═══════════════════════════════════════════════════════
+   PROGRESS BAR
+═══════════════════════════════════════════════════════ */
+#bar{
+  position:fixed;top:0;left:0;height:2.5px;
+  background:linear-gradient(90deg,var(--teal),var(--coral));
+  box-shadow:0 0 10px var(--teal);z-index:800;
+  transition:width .4s ease;border-radius:0 2px 2px 0;
+}
+
+/* ═══════════════════════════════════════════════════════
+   POWERED BY
+═══════════════════════════════════════════════════════ */
+.powered{
+  text-align:center;font-size:11px;color:var(--muted2);
+  padding:4px 0 28px;letter-spacing:.06em;
+}
+.powered span{
+  background:linear-gradient(135deg,var(--teal),var(--coral));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  font-weight:600;
+}
+
+/* ═══════════════════════════════════════════════════════
+   ERROR STATE
+═══════════════════════════════════════════════════════ */
+.err-state{
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;min-height:80vh;text-align:center;
+  gap:14px;padding:40px 24px;
+}
+.err-icon{font-size:48px}
+.err-title{font-family:var(--ff-head);font-size:24px;font-weight:700;color:var(--white)}
+.err-sub{font-size:14px;color:var(--muted)}
+  </style>
+</head>
+<body>
+
+<!-- ── Ambient Mesh ─────────────────────────────── -->
+<div class="mesh">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+</div>
+
+<!-- ── Progress Bar ────────────────────────────── -->
+<div id="bar" style="width:0%"></div>
+
+<!-- ── Particle Canvas ────────────────────────── -->
+<canvas id="particleCanvas"></canvas>
+
+<!-- ── Splash Screen ──────────────────────────── -->
+<div id="splash">
+  <div class="splash-logo">Zuit</div>
+  <div class="splash-tagline">Smart Review Platform</div>
+  <div class="splash-ring"></div>
+</div>
+
+<!-- ── Success Overlay ────────────────────────── -->
+<div id="success">
+  <div class="s-ring">
+    <svg width="34" height="34" viewBox="0 0 24 24" fill="none">
+      <path d="M5 13l4 4L19 7" stroke="url(#sg)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+      <defs><linearGradient id="sg" x1="5" y1="7" x2="19" y2="17"><stop stop-color="#00E5CC"/><stop offset="1" stop-color="#FF5A35"/></linearGradient></defs>
+    </svg>
+  </div>
+  <div class="s-title">You're All Set! 🎉</div>
+  <div class="s-sub">Your review has been copied! Paste it on Google to share your experience.</div>
+  <button class="s-close" onclick="document.getElementById('success').classList.remove('show')">Done</button>
+</div>
+
+<!-- ── Toast ──────────────────────────────────── -->
+<div id="toast"><span id="t-icon"></span><span id="t-msg"></span></div>
+
+<!-- ── App ────────────────────────────────────── -->
+<div id="app">
+  <div id="skeleton" style="padding:0 0 24px">
+    <div class="skel hero-skel" style="height:280px;border-radius:0;margin-bottom:14px"></div>
+    <div style="padding:0 16px;display:flex;flex-direction:column;gap:12px">
+      <div class="skel" style="height:70px"></div>
+      <div class="skel" style="height:180px"></div>
+    </div>
+  </div>
+  <div id="content" style="display:none"></div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   CONFIG
+═══════════════════════════════════════════════════ */
+const API = window.API_BASE||(location.hostname==='localhost'?'http://localhost:3001/api':'/api');
+
+const MOODS={1:'Really Bad 😞',2:'Not Great 😕',3:'It Was Okay 😐',4:'Pretty Good 😊',5:'Absolutely Loved It! 🔥'};
+const ICONS={restaurant:'🍽️',hotel:'🏨',salon:'💇',bar:'🍸',hospital:'🏥',cafe:'☕',gym:'💪',spa:'🧖',retail:'🛍️',other:'⭐'};
+
+/* ═══════════════════════════════════════════════════
+   DEMO DATA (offline fallback)
+═══════════════════════════════════════════════════ */
+const DEMOS={
+  'spice-garden-001':{
+    business:{id:'spice-garden-001',name:'Spice Garden',type:'restaurant',
+      description:'Authentic North Indian cuisine — heirloom spices, modern artistry.',
+      imageUrl:'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&q=80',
+      googlePlaceId:'ChIJN1t_tDeuEmsRUsoyG83frY4'},
+    questions:[
+      {id:'dish',question:'What did you order?',chips:['Biryani','Kebab','Dal Makhani','Tandoori','Dessert']},
+      {id:'taste',question:'How was the taste?',chips:['Outstanding','Delicious','Good','Average']},
+      {id:'service',question:'How was the service speed?',chips:['Super fast','Quick','Okay','Slow']},
+      {id:'ambience',question:'How was the ambience?',chips:['Cozy','Lively','Elegant','Noisy']}
+    ]
+  },
+  'taj-palace-002':{
+    business:{id:'taj-palace-002',name:'Taj Palace Hotel',type:'hotel',
+      description:'Five-star luxury — heritage architecture, royal suites, world-class amenities.',
+      imageUrl:'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800&q=80',
+      googlePlaceId:'ChIJN1t_tDeuEmsRUsoyG83frY5'},
+    questions:[
+      {id:'room',question:'How was the room?',chips:['Luxurious','Comfortable','Spacious','Average']},
+      {id:'clean',question:'Cleanliness?',chips:['Spotless','Very clean','Okay','Needs work']},
+      {id:'facilities',question:'Facilities?',chips:['Great WiFi','AC','Pool','Room service','Gym']},
+      {id:'staff',question:'Staff behavior?',chips:['Exceptional','Helpful','Courteous','Average']}
+    ]
+  },
+  'urban-glow-003':{
+    business:{id:'urban-glow-003',name:'Urban Glow Salon',type:'salon',
+      description:'Premium hair styling, skin treatments & wellness rituals.',
+      imageUrl:'https://images.unsplash.com/photo-1560066984-138daaa5c91a?w=800&q=80',
+      googlePlaceId:'ChIJN1t_tDeuEmsRUsoyG83frY6'},
+    questions:[
+      {id:'svc',question:'Which service did you try?',chips:['Haircut','Coloring','Facial','Massage','Nails']},
+      {id:'staff',question:'How was the staff?',chips:['Expert','Friendly','Professional','Average']},
+      {id:'clean',question:'Hygiene & Cleanliness?',chips:['Impeccable','Very clean','Good','Average']},
+      {id:'value',question:'Value for money?',chips:['Excellent','Worth it','Okay','Pricey']}
+    ]
+  },
+  'the-barrel-004':{
+    business:{id:'the-barrel-004',name:'The Barrel & Brew',type:'bar',
+      description:'Craft cocktails, live jazz & electric night vibes.',
+      imageUrl:'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=800&q=80',
+      googlePlaceId:'ChIJN1t_tDeuEmsRUsoyG83frY7'},
+    questions:[
+      {id:'music',question:'How was the music?',chips:['Amazing','Great vibe','Too loud','Okay']},
+      {id:'drinks',question:'Drinks quality?',chips:['Craft cocktails','Great beer','Signature drinks','Okay']},
+      {id:'ambience',question:'How was the ambience?',chips:['Electric','Chill','Trendy','Packed']},
+      {id:'crowd',question:'Crowd vibe?',chips:['Fun crowd','Chill people','Mixed','Too rowdy']}
+    ]
+  },
+  'apollo-005':{
+    business:{id:'apollo-005',name:'Apollo Medicity',type:'hospital',
+      description:'Multi-speciality hospital — compassionate care & expert physicians.',
+      imageUrl:'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&q=80',
+      googlePlaceId:'ChIJN1t_tDeuEmsRUsoyG83frY8'},
+    questions:[
+      {id:'doc',question:'Doctor behavior?',chips:['Very caring','Professional','Thorough','Average']},
+      {id:'wait',question:'Waiting time?',chips:['No wait','<15 min','Acceptable','Long wait']},
+      {id:'clean',question:'Cleanliness?',chips:['Excellent','Very clean','Good','Needs work']},
+      {id:'staff',question:'Support staff?',chips:['Very helpful','Courteous','Professional','Average']}
+    ]
+  },
+  'brew-house-006':{
+    business:{id:'brew-house-006',name:'The Brew House Cafe',type:'cafe',
+      description:'Specialty single-origin coffees, artisan pastries & cozy workspace.',
+      imageUrl:'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=800&q=80',
+      googlePlaceId:'ChIJN1t_tDeuEmsRUsoyG83frY9'},
+    questions:[
+      {id:'coffee',question:'Coffee quality?',chips:['Exceptional','Great flavor','Well brewed','Average']},
+      {id:'food',question:'Food & Pastries?',chips:['Delicious','Fresh','Good variety','Average']},
+      {id:'vibe',question:'Cafe vibe?',chips:['Perfect workspace','Cozy','Instagrammable','Noisy']},
+      {id:'svc',question:'Service quality?',chips:['Friendly baristas','Quick','Knowledgeable','Slow']}
+    ]
+  }
+};
+
+function offlineReview(r,type,name,chips){
+  const c=chips.length?chips.slice(0,3).join(', ').toLowerCase():'';
+  const T={
+    5:[`Honestly ${name} exceeded every expectation${c?' — especially the '+c:''}. The kind of experience you tell your friends about. 10/10, will be back!`,
+       `${name} is absolutely top-tier.${c?' The '+c+' were brilliant.':''} Flawless from start to finish — this is how it's done.`],
+    4:[`Really enjoyed my time at ${name}!${c?' The '+c+' impressed me a lot.':''} A few small things could be polished, but overall a very solid experience.`,
+       `${name} delivered a great visit.${c?' Loved the '+c+'.':''} Staff was on point and the overall vibe was positive. Would recommend.`],
+    3:[`${name} was decent overall.${c?' The '+c+' were satisfactory':''} — nothing extraordinary but not bad either. Room for improvement in a few areas.`,
+       `Mixed feelings about ${name}. Some things impressed me${c?' like '+c:''}; others fell a bit flat. Okay if you have no other options.`],
+    2:[`${name} didn't quite meet expectations.${c?' Issues with '+c+'.':''} Hopefully they address these — there's potential but a lot needs work.`,
+       `Below average experience at ${name}.${c?' The '+c+' were underwhelming.':''} I'd want to see significant improvement before returning.`],
+    1:[`Disappointed with ${name}.${c?' Particularly around '+c+'.':''} Would not recommend until major improvements are made across the board.`,
+       `${name} fell short on almost every front.${c?' Especially '+c+'.':''} Service, quality, everything — serious attention needed.`]
+  };
+  const pool=T[r]||T[3];
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+
+/* ═══════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════ */
+let S={
+  biz:null, questions:[], rating:0,
+  chips:{},         // {qId:[chips]}
+  review:'',        // generated/typed review
+  mode:'ai',        // 'ai' | 'direct'
+  generating:false
+};
+
+/* ═══════════════════════════════════════════════════
+   UTILITIES
+═══════════════════════════════════════════════════ */
+function bar(p){document.getElementById('bar').style.width=p+'%'}
+
+let _tt;
+function toast(msg,type='teal',icon='✓'){
+  const el=document.getElementById('toast');
+  el.className='toast show '+type;
+  document.getElementById('t-icon').textContent=icon;
+  document.getElementById('t-msg').textContent=msg;
+  clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('show'),3200);
+}
+
+function bizId(){
+  const p=location.pathname.split('/');
+  return p[p.indexOf('review')+1]||null;
+}
+function chips(){
+  return Object.values(S.chips).flat();
+}
+
+/* ═══════════════════════════════════════════════════
+   PARTICLES (star tap burst)
+═══════════════════════════════════════════════════ */
+const cv=document.getElementById('particleCanvas');
+const ctx=cv.getContext('2d');
+cv.width=window.innerWidth;cv.height=window.innerHeight;
+window.addEventListener('resize',()=>{cv.width=window.innerWidth;cv.height=window.innerHeight});
+
+let particles=[];
+function burst(x,y){
+  for(let i=0;i<28;i++){
+    const ang=Math.random()*Math.PI*2;
+    const spd=2+Math.random()*5;
+    const r=Math.random()>.5?'#00E5CC':'#FF5A35';
+    particles.push({x,y,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd,life:1,r,sz:2+Math.random()*4});
+  }
+}
+function animParticles(){
+  ctx.clearRect(0,0,cv.width,cv.height);
+  particles=particles.filter(p=>p.life>0);
+  particles.forEach(p=>{
+    p.x+=p.vx;p.y+=p.vy;p.vy+=.15;p.life-=.025;
+    ctx.save();ctx.globalAlpha=p.life;
+    ctx.fillStyle=p.r;ctx.beginPath();ctx.arc(p.x,p.y,p.sz,0,Math.PI*2);ctx.fill();
+    ctx.restore();
+  });
+  requestAnimationFrame(animParticles);
+}
+animParticles();
+
+/* ═══════════════════════════════════════════════════
+   FETCH
+═══════════════════════════════════════════════════ */
+async function fetchBiz(id){
+  bar(30);
+  try{
+    const r=await fetch(`${API}/business/${id}`,{signal:AbortSignal.timeout(5000)});
+    bar(70);
+    if(!r.ok)throw new Error(r.status===404?'Business not found':'Server error');
+    return r.json();
+  }catch{
+    bar(70);
+    if(DEMOS[id]){console.info('Demo mode:',id);return DEMOS[id];}
+    throw new Error('Business not found');
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   AI GENERATION
+═══════════════════════════════════════════════════ */
+async function generateAI(){
+  if(!S.rating||S.generating)return;
+  S.generating=true;
+
+  // Show review card if hidden
+  showCard('reviewCard');
+  setReviewBody(loadingHTML());
+
+  try{
+    const r=await fetch(`${API}/generate-review`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      signal:AbortSignal.timeout(15000),
+      body:JSON.stringify({rating:S.rating,businessType:S.biz.type,businessName:S.biz.name,selectedChips:chips()})
+    });
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.error||'Failed');
+    S.review=d.review;
+  }catch(e){
+    const net=e.name==='TypeError'||e.name==='AbortError';
+    if(net){S.review=offlineReview(S.rating,S.biz.type,S.biz.name,chips());toast('AI review ready ✨','teal','✨');}
+    else{S.review='';toast(e.message||'Try again','coral','✕');}
+  }finally{
+    S.generating=false;
+    setReviewBody(reviewHTML());
+    if(S.review)showCard('actionsCard');
+    setTimeout(()=>document.getElementById('actionsCard')?.scrollIntoView({behavior:'smooth',block:'nearest'}),200);
+  }
+}
+
+/* Typewriter effect */
+function typewrite(el,text){
+  el.value='';let i=0;
+  const t=setInterval(()=>{el.value+=text[i++];if(i>=text.length)clearInterval(t);},18);
+}
+
+/* ═══════════════════════════════════════════════════
+   HTML BUILDERS
+═══════════════════════════════════════════════════ */
+function loadingHTML(){
+  return `<div class="dots-wrap">
+    <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    <div class="dots-label">Zuit AI is writing your review…</div>
+  </div>`;
+}
+
+function reviewHTML(){
+  return `
+  <div class="ai-header">
+    <div class="ai-badge">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+      </svg>
+      Zuit AI
+    </div>
+    <span style="font-size:12px;color:var(--muted)">You can edit this</span>
+  </div>
+  <textarea class="review-box" id="reviewText" maxlength="500"
+    oninput="S.review=this.value;document.getElementById('cc').textContent=this.value.length+'/500'"
+    placeholder="Yahan apna review dikhega…">${S.review}</textarea>
+  <div class="review-footer">
+    <span class="char-ct" id="cc">${S.review.length}/500</span>
+    <button class="regen-btn" onclick="generateAI()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+      </svg>
+      Regenerate
+    </button>
+  </div>`;
+}
+
+function questionsHTML(){
+  return S.questions.map((q,qi)=>`
+    <div class="q-block">
+      <div class="q-title">${q.question}</div>
+      <div class="chips">
+        ${q.chips.map((c,ci)=>`
+          <button class="chip ${(S.chips[q.id]||[]).includes(c)?'on':''}"
+            style="animation-delay:${(qi*q.chips.length+ci)*.04}s"
+            onclick="toggleChip('${q.id}','${c.replace(/'/g,"\\'")}',this)">${c}</button>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+/* ═══════════════════════════════════════════════════
+   DOM HELPERS
+═══════════════════════════════════════════════════ */
+function showCard(id){
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.style.display='block';
+  void el.offsetWidth;
+  setTimeout(()=>el.classList.add('in'),20);
+}
+
+function setReviewBody(html){
+  const el=document.getElementById('reviewBody');
+  if(el)el.innerHTML=html;
+  // trigger typewriter if review ready
+  if(!S.generating&&S.review){
+    const ta=document.getElementById('reviewText');
+    if(ta)typewrite(ta,S.review);
+  }
+}
+
+function updateStars(n){
+  document.querySelectorAll('.star-btn').forEach((b,i)=>{
+    b.classList.toggle('lit',i<n);
+  });
+  const lbl=document.getElementById('moodLabel');
+  if(lbl)lbl.textContent=n?MOODS[n]:'';
+}
+
+function toggleChip(qId,val,el){
+  if(!S.chips[qId])S.chips[qId]=[];
+  const a=S.chips[qId],idx=a.indexOf(val);
+  if(idx===-1){a.push(val);el.classList.add('on');}
+  else{a.splice(idx,1);el.classList.remove('on');}
+}
+
+/* ═══════════════════════════════════════════════════
+   STAR CLICK — main interaction
+═══════════════════════════════════════════════════ */
+function selectRating(n,ev){
+  S.rating=n;
+  S.chips={};
+  S.review='';
+
+  updateStars(n);
+
+  // Particle burst at tap point
+  const rect=ev.currentTarget.getBoundingClientRect();
+  burst(rect.left+rect.width/2,rect.top+rect.height/2);
+
+  // Haptic if supported
+  if(navigator.vibrate)navigator.vibrate(30);
+
+  // Show/refresh questions card
+  showCard('questionsCard');
+  const qi=document.getElementById('questionsInner');
+  if(qi)qi.innerHTML=questionsHTML();
+
+  // Hide old review/actions
+  const rc=document.getElementById('reviewCard'),ac=document.getElementById('actionsCard');
+  if(rc){rc.style.display='none';rc.classList.remove('in');}
+  if(ac){ac.style.display='none';ac.classList.remove('in');}
+
+  // Scroll to questions
+  setTimeout(()=>document.getElementById('questionsCard')?.scrollIntoView({behavior:'smooth',block:'nearest'}),350);
+}
+
+/* ═══════════════════════════════════════════════════
+   COPY & POST
+═══════════════════════════════════════════════════ */
+async function copyReview(){
+  const txt=document.getElementById('reviewText')?.value||S.review;
+  if(!txt.trim()){toast('Pehle review generate karo','coral','✕');return false;}
+  try{await navigator.clipboard.writeText(txt);return true;}
+  catch{
+    const t=document.createElement('textarea');
+    t.value=txt;t.style.cssText='position:fixed;opacity:0';
+    document.body.appendChild(t);t.select();document.execCommand('copy');
+    document.body.removeChild(t);return true;
+  }
+}
+
+function saveAnalytics(posted){
+  const txt=document.getElementById('reviewText')?.value||'';
+  fetch(`${API}/save-analytics`,{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({businessId:S.biz.id,rating:S.rating,chips:chips(),reviewLength:txt.length,wasPosted:posted})
+  }).catch(()=>{});
+}
+
+async function quickCopy(){
+  if(await copyReview())toast('Review clipboard pe copy ho gaya! ✓','teal','📋');
+}
+
+async function postGoogle(){
+  // Get the review text
+  const txt=document.getElementById('reviewText')?.value||S.review;
+  if(!txt.trim()){toast('Generate or write a review first','coral','✕');return;}
+  
+  // Auto copy
+  try{await navigator.clipboard.writeText(txt);}
+  catch{
+    const t=document.createElement('textarea');
+    t.value=txt;t.style.cssText='position:fixed;opacity:0';
+    document.body.appendChild(t);t.select();document.execCommand('copy');
+    document.body.removeChild(t);
+  }
+
+  saveAnalytics(true);
+
+  // Show paste helper overlay instead of success
+  showPasteHelper(txt);
+
+  // Open Google review page after short delay
+  setTimeout(()=>{
+    window.open(`https://search.google.com/local/writereview?placeid=${S.biz.googlePlaceId}`,'_blank');
+  },1200);
+}
+
+function showPasteHelper(txt){
+  // Remove existing helper if any
+  document.getElementById('pasteHelper')?.remove();
+  
+  const el=document.createElement('div');
+  el.id='pasteHelper';
+  el.style.cssText=`
+    position:fixed;inset:0;z-index:900;
+    background:rgba(7,7,18,0.95);backdrop-filter:blur(16px);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:20px;padding:24px;animation:appIn .4s ease;
+  `;
+  el.innerHTML=`
+    <div style="font-size:52px">📋</div>
+    <div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;
+      background:linear-gradient(135deg,#00E5CC,#FF5A35);
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+      text-align:center">Review Copied!</div>
+    
+    <div style="background:rgba(0,229,204,0.08);border:1px solid rgba(0,229,204,0.25);
+      border-radius:16px;padding:20px 24px;max-width:380px;width:100%">
+      <div style="font-size:12px;color:rgba(0,229,204,0.8);font-weight:700;
+        letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px">Your Review</div>
+      <div style="font-size:13.5px;color:#E0E8FF;line-height:1.65;
+        max-height:100px;overflow-y:auto">${txt}</div>
+    </div>
+
+    <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);
+      border-radius:16px;padding:20px 24px;max-width:380px;width:100%;text-align:center">
+      <div style="font-size:28px;margin-bottom:10px">🌐</div>
+      <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;
+        color:#F0F4FF;margin-bottom:8px">Google Review Page is Opening...</div>
+      <div style="font-size:13px;color:rgba(200,210,240,0.55);line-height:1.6">
+        When Google opens, click inside the review box and press<br>
+        <span style="background:rgba(0,229,204,0.15);border:1px solid rgba(0,229,204,0.3);
+          color:#00E5CC;font-weight:700;padding:3px 10px;border-radius:6px;
+          font-size:14px;margin:4px 2px;display:inline-block">Ctrl + V</span>
+        <span style="color:rgba(200,210,240,0.4)">or</span>
+        <span style="background:rgba(0,229,204,0.15);border:1px solid rgba(0,229,204,0.3);
+          color:#00E5CC;font-weight:700;padding:3px 10px;border-radius:6px;
+          font-size:14px;margin:4px 2px;display:inline-block">Long Press → Paste</span>
+        on mobile
+      </div>
+    </div>
+
+    <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">
+      <button onclick="navigator.clipboard.writeText(\`${txt.replace(/`/g,"'")}\`).then(()=>{})" 
+        style="background:linear-gradient(135deg,#00E5CC,#00BFAD);color:#050510;
+        font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;
+        padding:13px 24px;border-radius:12px;border:none;cursor:pointer">
+        📋 Copy Again
+      </button>
+      <button onclick="document.getElementById('pasteHelper').remove()"
+        style="background:transparent;border:1px solid rgba(255,255,255,0.1);
+        color:rgba(200,210,240,0.6);font-family:'Outfit',sans-serif;font-size:14px;
+        padding:13px 24px;border-radius:12px;cursor:pointer">
+        Close
+      </button>
+    </div>
+  `;
+  document.body.appendChild(el);
+}
+
+function switchMode(m){
+  S.mode=m;
+  document.querySelectorAll('.mode-tab').forEach(t=>t.classList.toggle('active',t.dataset.m===m));
+  const aiSec=document.getElementById('aiSection');
+  const drSec=document.getElementById('directSection');
+  if(aiSec)aiSec.style.display=m==='ai'?'block':'none';
+  if(drSec)drSec.style.display=m==='direct'?'block':'none';
+}
+
+/* ═══════════════════════════════════════════════════
+   RENDER
+═══════════════════════════════════════════════════ */
+function render(){
+  const b=S.biz;
+  const icon=ICONS[b.type]||'⭐';
+  bar(100);setTimeout(()=>bar(0),600);
+  document.title=`Review — ${b.name} | Zuit`;
+
+  const html=`
+    <!-- HERO -->
+    <div class="hero">
+      <img class="hero-img" src="${b.imageUrl}" alt="${b.name}" onload="this.classList.add('loaded')"/>
+      <div class="hero-vignette"></div>
+      <div class="hero-body">
+        <div class="zuit-pill">${icon} ${b.type}</div>
+        <h1 class="hero-name">${b.name}</h1>
+        <p class="hero-desc">${b.description}</p>
+      </div>
+    </div>
+
+    <!-- ABOUT ZUIT STRIP -->
+    <div class="zuit-about">
+      <div class="zuit-icon">Z</div>
+      <div class="zuit-about-text">
+        <div class="zuit-about-title">What is Zuit?</div>
+        <div class="zuit-about-sub">Star do → Zuit AI apka review likhega → Ek click mein Google pe share karo. Sirf 10 seconds.</div>
+      </div>
+    </div>
+
+    <!-- CARDS -->
+    <div class="cards">
+
+      <!-- ① RATING CARD -->
+      <div class="card" id="ratingCard">
+        <div class="card-label">Rate Your Experience</div>
+        <div class="stars-wrap" onmouseleave="updateStars(S.rating)">
+          ${[1,2,3,4,5].map(n=>`
+            <button class="star-btn ${S.rating>=n?'lit':''}" id="s${n}"
+              onmouseover="updateStars(${n})"
+              onclick="selectRating(${n},event)"
+              aria-label="${n} star">
+              <svg class="star-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+              </svg>
+            </button>`).join('')}
+        </div>
+        <div class="rating-mood" id="moodLabel">${S.rating?MOODS[S.rating]:'Tap a star to rate ⬆'}</div>
+      </div>
+
+      <!-- ② QUESTIONS + GENERATE CARD -->
+      <div class="card" id="questionsCard" style="display:none">
+        <div class="card-label">Tell Us More (Optional)</div>
+        <div id="questionsInner"></div>
+
+        <button class="btn-main btn-teal" style="margin-top:20px" onclick="generateAI()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+          </svg>
+          Generate AI Review
+        </button>
+      </div>
+
+      <!-- ③ REVIEW CARD (AI + Direct) -->
+      <div class="card" id="reviewCard" style="display:none">
+        <div class="card-label">Your Review</div>
+
+        <!-- Mode Toggle -->
+        <div class="mode-tabs">
+          <button class="mode-tab active" data-m="ai" onclick="switchMode('ai')">🤖 AI Review</button>
+          <button class="mode-tab" data-m="direct" onclick="switchMode('direct')">✏️ Write Myself</button>
+        </div>
+
+        <!-- AI section -->
+        <div id="aiSection">
+          <div id="reviewBody">${reviewHTML()}</div>
+        </div>
+
+        <!-- Direct section -->
+        <div id="directSection" style="display:none">
+          <textarea class="direct-textarea" id="directText" maxlength="500"
+            placeholder="Write your own review here…"
+            oninput="S.review=this.value"></textarea>
+          <div style="margin-top:10px;text-align:right;font-size:12px;color:var(--muted)">
+            Max 500 characters
+          </div>
+        </div>
+      </div>
+
+      <!-- ④ ACTIONS CARD -->
+      <div class="card" id="actionsCard" style="display:none">
+        <div class="card-label">Share on Google</div>
+        <div style="display:flex;flex-direction:column;gap:11px">
+          <button class="btn-main btn-google" onclick="postGoogle()">
+            <svg width="20" height="20" viewBox="0 0 24 24">
+              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#fff"/>
+              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#fff"/>
+              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#fff"/>
+              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#fff"/>
+            </svg>
+            Post on Google
+          </button>
+          <button class="btn-main btn-ghost" onclick="quickCopy()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2"/>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+            Copy to Clipboard
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="powered">Powered by <span>Zuit</span> · AI Review Platform</div>`;
+
+  document.getElementById('skeleton').style.display='none';
+  const ct=document.getElementById('content');
+  ct.innerHTML=html;ct.style.display='block';
+
+  // IntersectionObserver for card entrance
+  const obs=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');obs.unobserve(e.target);}});
+  },{threshold:.08});
+  document.querySelectorAll('.card').forEach(c=>{
+    if(c.style.display!=='none')obs.observe(c);
+  });
+}
+
+function renderError(msg){
+  bar(0);
+  document.getElementById('skeleton').style.display='none';
+  const ct=document.getElementById('content');
+  ct.style.display='block';
+  ct.innerHTML=`<div class="err-state">
+    <div class="err-icon">🔍</div>
+    <div class="err-title">Nahi Mila</div>
+    <div class="err-sub">${msg}</div>
+  </div>`;
+}
+
+/* ═══════════════════════════════════════════════════
+   BOOT
+═══════════════════════════════════════════════════ */
+(async()=>{
+  const id=bizId();
+  if(!id){renderError('URL mein business ID nahi hai.');return;}
+  try{
+    bar(15);
+    const d=await fetchBiz(id);
+    S.biz=d.business;S.questions=d.questions;
+    render();
+  }catch(e){
+    renderError(e.message||'Data load nahi hua.');
+  }
+})();
+</script>
+</body>
+</html>
