@@ -481,7 +481,24 @@ body{
 .err-icon{font-size:48px}
 .err-title{font-family:var(--ff-head);font-size:24px;font-weight:700;color:var(--white)}
 .err-sub{font-size:14px;color:var(--muted)}
-  </style>
+  
+/* ── AUTO MODE BANNER ── */
+.auto-banner{
+  display:flex;align-items:center;gap:10px;
+  background:linear-gradient(135deg,rgba(0,229,204,.12),rgba(0,229,204,.05));
+  border:1px solid rgba(0,229,204,.3);border-radius:var(--radi-sm);
+  padding:11px 16px;margin-bottom:16px;font-size:13px;color:var(--teal);font-weight:500;
+}
+.neg-notice{
+  text-align:center;padding:28px 20px;
+  background:linear-gradient(135deg,rgba(255,90,53,.08),rgba(255,90,53,.03));
+  border:1px solid rgba(255,90,53,.2);border-radius:var(--radi-sm);
+}
+.neg-notice .n-icon{font-size:40px;margin-bottom:12px}
+.neg-notice .n-title{font-family:var(--ff-head);font-size:18px;font-weight:700;color:var(--white);margin-bottom:8px}
+.neg-notice .n-sub{font-size:13px;color:var(--muted);line-height:1.6}
+
+</style>
 </head>
 <body>
 
@@ -643,10 +660,11 @@ function offlineReview(r,type,name,chips){
 ═══════════════════════════════════════════════════ */
 let S={
   biz:null, questions:[], rating:0,
-  chips:{},         // {qId:[chips]}
-  review:'',        // generated/typed review
-  mode:'ai',        // 'ai' | 'direct'
-  generating:false
+  chips:{},
+  review:'',
+  mode:'ai',
+  generating:false,
+  autoMode:false   // true when ?auto=1 in URL (QR scan)
 };
 
 /* ═══════════════════════════════════════════════════
@@ -844,30 +862,51 @@ function toggleChip(qId,val,el){
    STAR CLICK — main interaction
 ═══════════════════════════════════════════════════ */
 function selectRating(n,ev){
-  S.rating=n;
-  S.chips={};
-  S.review='';
-
+  S.rating=n;S.chips={};S.review='';
   updateStars(n);
 
-  // Particle burst at tap point
   const rect=ev.currentTarget.getBoundingClientRect();
   burst(rect.left+rect.width/2,rect.top+rect.height/2);
-
-  // Haptic if supported
   if(navigator.vibrate)navigator.vibrate(30);
-
-  // Show/refresh questions card
-  showCard('questionsCard');
-  const qi=document.getElementById('questionsInner');
-  if(qi)qi.innerHTML=questionsHTML();
 
   // Hide old review/actions
   const rc=document.getElementById('reviewCard'),ac=document.getElementById('actionsCard');
   if(rc){rc.style.display='none';rc.classList.remove('in');}
   if(ac){ac.style.display='none';ac.classList.remove('in');}
 
-  // Scroll to questions
+  showCard('questionsCard');
+  const qi=document.getElementById('questionsInner');
+  if(qi)qi.innerHTML=questionsHTML();
+
+  // AUTO MODE (QR scan) → auto-generate after short delay, then auto-redirect if positive
+  if(S.autoMode){
+    setTimeout(async()=>{
+      await generateAI();
+      // If negative, show empathy screen without going to Google
+      if(S.rating<=2){
+        saveReviewMongo('negative');
+        saveAnalytics(false);
+        showNegativeScreen();
+        return;
+      }
+      // Positive → auto copy + open Google after another 1.5s
+      setTimeout(async()=>{
+        const txt=document.getElementById('reviewText')?.value||S.review;
+        if(!txt.trim())return;
+        try{await navigator.clipboard.writeText(txt);}catch{
+          const t=document.createElement('textarea');t.value=txt;t.style.cssText='position:fixed;opacity:0';
+          document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);
+        }
+        saveReviewMongo('positive');
+        saveAnalytics(true);
+        showPasteHelper(txt);
+        setTimeout(()=>window.open('https://search.google.com/local/writereview?placeid='+S.biz.googlePlaceId,'_blank'),1200);
+      },1800);
+    },800);
+    setTimeout(()=>document.getElementById('questionsCard')?.scrollIntoView({behavior:'smooth',block:'nearest'}),350);
+    return;
+  }
+
   setTimeout(()=>document.getElementById('questionsCard')?.scrollIntoView({behavior:'smooth',block:'nearest'}),350);
 }
 
@@ -893,16 +932,58 @@ function saveAnalytics(posted){
   }).catch(()=>{});
 }
 
+// Save review to MongoDB (works for both positive & negative)
+function saveReviewMongo(type){
+  const txt=document.getElementById('reviewText')?.value||S.review||'';
+  fetch(`${API}/save-review`,{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      businessId:   S.biz.id,
+      businessName: S.biz.name,
+      rating:       S.rating,
+      reviewText:   txt,
+      chips:        chips(),
+      type:         type,          // 'positive' or 'negative'
+      sentToGoogle: type==='positive'
+    })
+  }).catch(()=>{}); // fire-and-forget
+}
+
+function isNegativeRating(){ return S.rating <= 2; }
+
+function showNegativeScreen(){
+  // Hide review card content, show empathy message
+  const rb=document.getElementById('reviewBody');
+  if(rb){
+    rb.innerHTML=`<div class="neg-notice">
+      <div class="n-icon">🙏</div>
+      <div class="n-title">Hum Sorry Hain!</div>
+      <div class="n-sub">Aapka feedback humne note kar liya hai. Hamari team is par kaam karegi aur aapka experience improve karenge.<br><br>Thank you for letting us know — it means a lot! 💙</div>
+    </div>`;
+  }
+  // Hide actions card
+  const ac=document.getElementById('actionsCard');
+  if(ac){ac.style.display='none';ac.classList.remove('in');}
+  toast('Aapka feedback save ho gaya 💌','teal','✓');
+}
+
 async function quickCopy(){
   if(await copyReview())toast('Review clipboard pe copy ho gaya! ✓','teal','📋');
 }
 
 async function postGoogle(){
-  // Get the review text
   const txt=document.getElementById('reviewText')?.value||S.review;
-  if(!txt.trim()){toast('Generate or write a review first','coral','✕');return;}
-  
-  // Auto copy
+  if(!txt.trim()){toast('Pehle review generate karo','coral','✕');return;}
+
+  // ── NEGATIVE REVIEW: Save to MongoDB, DON'T send to Google ──
+  if(isNegativeRating()){
+    saveReviewMongo('negative');
+    saveAnalytics(false);
+    showNegativeScreen();
+    return;
+  }
+
+  // ── POSITIVE REVIEW: Copy + Save + Open Google ──
   try{await navigator.clipboard.writeText(txt);}
   catch{
     const t=document.createElement('textarea');
@@ -910,15 +991,11 @@ async function postGoogle(){
     document.body.appendChild(t);t.select();document.execCommand('copy');
     document.body.removeChild(t);
   }
-
+  saveReviewMongo('positive');
   saveAnalytics(true);
-
-  // Show paste helper overlay instead of success
   showPasteHelper(txt);
-
-  // Open Google review page after short delay
   setTimeout(()=>{
-    window.open(`https://search.google.com/local/writereview?placeid=${S.biz.googlePlaceId}`,'_blank');
+    window.open('https://search.google.com/local/writereview?placeid='+S.biz.googlePlaceId,'_blank');
   },1200);
 }
 
@@ -1030,6 +1107,7 @@ function render(){
       <!-- ① RATING CARD -->
       <div class="card" id="ratingCard">
         <div class="card-label">Rate Your Experience</div>
+        \${S.autoMode?'<div class="auto-banner"><span>⚡</span><span>Quick mode: Star do, review auto-generate hoga aur Google pe redirect hoga!</span></div>':''}
         <div class="stars-wrap" onmouseleave="updateStars(S.rating)">
           ${[1,2,3,4,5].map(n=>`
             <button class="star-btn ${S.rating>=n?'lit':''}" id="s${n}"
@@ -1139,6 +1217,9 @@ function renderError(msg){
    BOOT
 ═══════════════════════════════════════════════════ */
 (async()=>{
+  // Detect QR scan auto mode via ?auto=1
+  S.autoMode = new URLSearchParams(location.search).get('auto')==='1';
+
   const id=bizId();
   if(!id){renderError('URL mein business ID nahi hai.');return;}
   try{
