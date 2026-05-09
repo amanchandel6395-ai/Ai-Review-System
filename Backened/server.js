@@ -9,7 +9,7 @@ const QRCode       = require('qrcode');
 const OpenAI       = require('openai');
 const path         = require('path');
 
-const { Business, Analytics, SEED_BUSINESSES } = require('./data/businesses');
+const { Business, Analytics, Review, SEED_BUSINESSES } = require('./data/businesses');
 const { QUESTIONS } = require('./config/questions');
 
 const app  = express();
@@ -290,6 +290,83 @@ app.get('/api/qr/:businessId/svg', async (req, res) => {
     res.send(svg);
   } catch (err) {
     res.status(500).json({ error: 'QR generation failed' });
+  }
+});
+
+
+// POST /api/save-review — Save any review to MongoDB (called from frontend)
+app.post('/api/save-review', async (req, res) => {
+  try {
+    const { businessId, businessName, rating, reviewText, chips, type, sentToGoogle } = req.body;
+    if (!businessId || !rating || !type) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+    const review = new Review({
+      businessId,
+      businessName: businessName || '',
+      rating,
+      reviewText:   reviewText || '',
+      chips:        chips || [],
+      type,
+      sentToGoogle: sentToGoogle || false,
+      userAgent:    req.headers['user-agent'] || ''
+    });
+    await review.save();
+    // Bump review count on business
+    await Business.findByIdAndUpdate(businessId, { $inc: { reviewCount: 1 } });
+    res.json({ success: true, id: review._id });
+  } catch (err) {
+    console.error('POST /save-review error:', err);
+    res.status(500).json({ error: 'Failed to save review' });
+  }
+});
+
+// GET /api/reviews — Admin: get all reviews with optional filters
+// Query params: type=positive|negative, businessId=xxx, limit=50
+app.get('/api/reviews', async (req, res) => {
+  try {
+    const filter = {};
+    if (req.query.type)       filter.type       = req.query.type;
+    if (req.query.businessId) filter.businessId = req.query.businessId;
+
+    const limit = Math.min(parseInt(req.query.limit) || 200, 500);
+    const reviews = await Review.find(filter)
+      .sort({ timestamp: -1 })
+      .limit(limit);
+
+    const total    = await Review.countDocuments({});
+    const positive = await Review.countDocuments({ type: 'positive' });
+    const negative = await Review.countDocuments({ type: 'negative' });
+    const allRatings = await Review.find({}, 'rating');
+    const avgRating  = allRatings.length
+      ? (allRatings.reduce((s, r) => s + r.rating, 0) / allRatings.length).toFixed(1)
+      : 0;
+
+    res.json({ reviews, stats: { total, positive, negative, avgRating } });
+  } catch (err) {
+    console.error('GET /reviews error:', err);
+    res.status(500).json({ error: 'Failed to fetch reviews' });
+  }
+});
+
+// DELETE /api/reviews/:id — Admin: delete single review
+app.delete('/api/reviews/:id', async (req, res) => {
+  try {
+    const result = await Review.findByIdAndDelete(req.params.id);
+    if (!result) return res.status(404).json({ error: 'Review not found' });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete review' });
+  }
+});
+
+// DELETE /api/reviews — Admin: delete ALL reviews (use with caution)
+app.delete('/api/reviews', async (req, res) => {
+  try {
+    const result = await Review.deleteMany({});
+    res.json({ success: true, deleted: result.deletedCount });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete reviews' });
   }
 });
 
