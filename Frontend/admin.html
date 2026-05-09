@@ -3,313 +3,133 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Zuit Admin — Dashboard</title>
+  <title>Zuit Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#070712;--bg2:#0C0C1E;--surface:rgba(255,255,255,0.04);--surface2:rgba(255,255,255,0.07);
-  --surface3:rgba(255,255,255,0.1);--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.12);
+  --bg:#070712;--bg2:#0C0C1E;
+  --surface:rgba(255,255,255,0.04);--surface2:rgba(255,255,255,0.07);
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.12);
   --teal:#00E5CC;--teal2:#00BFAD;--coral:#FF5A35;--coral2:#FF8260;
   --white:#F0F4FF;--muted:rgba(200,210,240,0.45);--muted2:rgba(200,210,240,0.22);
-  --success:#00D68F;--danger:#FF4D4D;
   --ff-head:'Syne',sans-serif;--ff-body:'Outfit',sans-serif;
   --radius:18px;--radi-sm:12px;--radi-xs:8px;
 }
-html{scroll-behavior:smooth}
-body{background:var(--bg);color:var(--white);font-family:var(--ff-body);
-  min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased;display:flex}
+html,body{height:100%;margin:0;padding:0;}
+body{background:var(--bg);color:var(--white);font-family:var(--ff-body);-webkit-font-smoothing:antialiased;overflow-x:hidden;}
 
-/* ── Mesh BG ── */
-.mesh{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
-.orb{position:absolute;border-radius:50%;filter:blur(90px);animation:drift 22s ease-in-out infinite alternate}
-.o1{width:500px;height:500px;background:rgba(0,229,204,0.05);top:-100px;left:-100px}
-.o2{width:400px;height:400px;background:rgba(255,90,53,0.04);bottom:-80px;right:-80px;animation-delay:-10s}
-@keyframes drift{0%{transform:translate(0,0)}100%{transform:translate(40px,30px)}}
+/* MESH */
+.mesh{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+.orb{position:absolute;border-radius:50%;filter:blur(90px);animation:drift 22s ease-in-out infinite alternate;}
+.o1{width:500px;height:500px;background:rgba(0,229,204,0.05);top:-100px;left:-100px;}
+.o2{width:400px;height:400px;background:rgba(255,90,53,0.04);bottom:-80px;right:-80px;animation-delay:-10s;}
+@keyframes drift{0%{transform:translate(0,0);}100%{transform:translate(40px,30px);}}
 
-/* ── SIDEBAR ── */
-.sidebar{
-  width:220px;flex-shrink:0;height:100vh;position:sticky;top:0;
-  background:rgba(12,12,30,.95);border-right:1px solid var(--border);
-  display:flex;flex-direction:column;padding:24px 16px;
-  z-index:10;backdrop-filter:blur(20px)}
-.s-logo{font-family:var(--ff-head);font-size:26px;font-weight:800;letter-spacing:-1px;
-  background:linear-gradient(135deg,var(--teal),var(--coral));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-  margin-bottom:8px;padding:0 8px}
-.s-tagline{font-size:11px;color:var(--muted2);letter-spacing:.08em;
-  text-transform:uppercase;padding:0 8px;margin-bottom:28px}
-.s-section{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
-  color:var(--muted2);padding:0 8px;margin-bottom:8px;margin-top:16px}
-.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;
-  border-radius:var(--radi-xs);color:var(--muted);font-size:14px;font-weight:500;
-  cursor:pointer;transition:all .2s ease;border:none;background:none;
-  width:100%;text-align:left;outline:none;-webkit-tap-highlight-color:transparent}
-.nav-item .ni{font-size:18px;flex-shrink:0}
-.nav-item:hover{background:var(--surface2);color:var(--white)}
-.nav-item.active{background:linear-gradient(135deg,rgba(0,229,204,.12),rgba(255,90,53,.08));
-  color:var(--teal);border:1px solid rgba(0,229,204,.15)}
-.s-footer{margin-top:auto;padding:12px 8px 0;border-top:1px solid var(--border)}
-.s-footer-text{font-size:11px;color:var(--muted2);line-height:1.5}
-
-/* ── MAIN ── */
-.main{flex:1;min-height:100vh;overflow-y:auto;position:relative;z-index:1;padding:32px}
-
-/* ── PAGE HEADER ── */
-.page-header{margin-bottom:28px}
-.page-title{font-family:var(--ff-head);font-size:28px;font-weight:800;
-  letter-spacing:-0.5px;color:var(--white);margin-bottom:5px}
-.page-sub{font-size:14px;color:var(--muted)}
-
-/* ── CARDS ── */
-.card{background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--radius);padding:24px}
-.card-label{font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
-  color:var(--teal);margin-bottom:18px;display:flex;align-items:center;gap:8px}
-.card-label::after{content:'';flex:1;height:1px;
-  background:linear-gradient(to right,rgba(0,229,204,.25),transparent)}
-
-/* ── STAT CARDS ── */
-.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
-.stat-card{background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--radi-sm);padding:20px;transition:all .2s ease}
-.stat-card:hover{border-color:rgba(0,229,204,.2);transform:translateY(-2px)}
-.stat-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.stat-icon{font-size:22px}
-.stat-trend{font-size:11px;color:var(--success);font-weight:600}
-.stat-val{font-family:var(--ff-head);font-size:28px;font-weight:800;color:var(--white);margin-bottom:4px}
-.stat-lbl{font-size:12px;color:var(--muted)}
-
-/* ── BUSINESS LIST ── */
-.biz-list{display:flex;flex-direction:column;gap:10px}
-.biz-row{display:flex;align-items:center;gap:16px;padding:16px;
-  background:var(--surface2);border:1px solid var(--border);
-  border-radius:var(--radi-sm);transition:all .2s ease}
-.biz-row:hover{border-color:rgba(0,229,204,.2)}
-.biz-emoji{font-size:30px;flex-shrink:0}
-.biz-info{flex:1;min-width:0}
-.biz-name{font-family:var(--ff-head);font-size:15px;font-weight:700;color:var(--white);margin-bottom:2px}
-.biz-meta{font-size:12px;color:var(--muted);display:flex;gap:12px;flex-wrap:wrap}
-.biz-meta span{display:flex;align-items:center;gap:4px}
-.biz-actions{display:flex;gap:8px;flex-shrink:0}
-
-/* ── BUTTONS ── */
-.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;
-  border-radius:var(--radi-xs);font-family:var(--ff-body);font-size:13px;font-weight:500;
-  cursor:pointer;transition:all .2s ease;outline:none;border:none;
-  -webkit-tap-highlight-color:transparent}
-.btn-teal{background:linear-gradient(135deg,var(--teal),var(--teal2));color:#050510;font-weight:600}
-.btn-teal:hover{box-shadow:0 6px 20px rgba(0,229,204,.3);transform:translateY(-1px)}
-.btn-outline{background:transparent;border:1px solid var(--border);color:var(--muted)}
-.btn-outline:hover{border-color:rgba(0,229,204,.3);color:var(--teal)}
-.btn-coral{background:linear-gradient(135deg,var(--coral),var(--coral2));color:#fff;font-weight:600}
-.btn-coral:hover{box-shadow:0 6px 20px rgba(255,90,53,.3);transform:translateY(-1px)}
-.btn-lg-full{width:100%;justify-content:center;padding:14px 20px;font-size:14px;
-  border-radius:var(--radi-sm)}
-
-/* ── FORM ── */
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.fg{display:flex;flex-direction:column;gap:6px}
-.fg.full{grid-column:1/-1}
-.fg label{font-size:12px;color:var(--muted);font-weight:500}
-.fg input,.fg select,.fg textarea{
-  background:var(--surface2);border:1px solid var(--border);
-  border-radius:var(--radi-xs);color:var(--white);font-family:var(--ff-body);
-  font-size:14px;padding:11px 14px;outline:none;transition:border-color .2s}
-.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:rgba(0,229,204,.4)}
-.fg select option{background:var(--bg2)}
-.fg textarea{resize:vertical;min-height:80px}
-.form-hint{font-size:11px;color:var(--muted2);margin-top:3px}
-
-/* ── QR SECTION ── */
-.qr-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-.qr-card{background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--radi-sm);padding:20px;text-align:center;transition:all .2s ease}
-.qr-card:hover{border-color:rgba(0,229,204,.2)}
-.qr-emoji{font-size:32px;margin-bottom:8px}
-.qr-name{font-family:var(--ff-head);font-size:14px;font-weight:700;color:var(--white);margin-bottom:4px}
-.qr-type{font-size:11.5px;color:var(--muted);text-transform:capitalize;margin-bottom:14px}
-.qr-preview{width:120px;height:120px;background:#fff;border-radius:10px;
-  margin:0 auto 14px;padding:6px;display:flex;align-items:center;justify-content:center;
-  font-size:11px;color:#888;position:relative;overflow:hidden}
-.qr-preview img{width:100%;height:100%;object-fit:contain}
-.qr-actions{display:flex;gap:6px;justify-content:center}
-
-/* ── ANALYTICS ── */
-.analytics-biz-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px}
-.abtn{padding:9px 16px;border-radius:100px;border:1px solid var(--border);
-  background:none;color:var(--muted);font-family:var(--ff-body);font-size:13px;
-  cursor:pointer;transition:all .2s ease;outline:none}
-.abtn:hover,.abtn.active{background:rgba(0,229,204,.1);border-color:rgba(0,229,204,.3);color:var(--teal)}
-
-.rating-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
-.rb-label{font-size:13px;color:var(--muted);width:30px;text-align:right;flex-shrink:0}
-.rb-track{flex:1;height:10px;background:var(--surface2);border-radius:5px;overflow:hidden}
-.rb-fill{height:100%;border-radius:5px;
-  background:linear-gradient(90deg,var(--teal),var(--coral));
-  transition:width .8s cubic-bezier(.4,0,.2,1)}
-.rb-count{font-size:12px;color:var(--muted);width:28px;flex-shrink:0}
-
-.analytics-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
-
-/* ── MODAL ── */
-.modal-bg{position:fixed;inset:0;background:rgba(7,7,18,.9);z-index:500;
-  display:flex;align-items:center;justify-content:center;
-  backdrop-filter:blur(10px);opacity:0;pointer-events:none;transition:opacity .3s ease}
-.modal-bg.show{opacity:1;pointer-events:all}
-.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);
-  padding:32px;width:90%;max-width:560px;
-  transform:translateY(20px) scale(.97);
-  transition:transform .35s cubic-bezier(.34,1.56,.64,1)}
-.modal-bg.show .modal{transform:translateY(0) scale(1)}
-.modal-title{font-family:var(--ff-head);font-size:22px;font-weight:800;
-  color:var(--white);margin-bottom:22px}
-.modal-footer{display:flex;gap:10px;margin-top:22px;justify-content:flex-end}
-
-/* ── QR MODAL ── */
-.qr-modal-preview{
-  background:#fff;border-radius:16px;padding:16px;
-  display:flex;align-items:center;justify-content:center;
-  margin:0 auto 20px;width:200px;height:200px}
-.qr-modal-preview img{width:100%;height:100%;object-fit:contain}
-.qr-url-box{background:var(--surface2);border:1px solid var(--border);
-  border-radius:var(--radi-xs);padding:12px 14px;
-  font-size:12.5px;color:var(--muted);word-break:break-all;
-  margin-bottom:18px;line-height:1.5}
-.qr-modal-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
-
-/* ── TOAST ── */
-#toast{position:fixed;bottom:24px;right:24px;
-  background:rgba(12,12,30,.97);border:1px solid var(--border);
-  color:var(--white);font-family:var(--ff-body);font-size:13.5px;font-weight:500;
-  padding:13px 20px;border-radius:100px;display:flex;align-items:center;gap:9px;
-  z-index:600;transform:translateY(60px);opacity:0;
-  transition:all .4s cubic-bezier(.34,1.56,.64,1);
-  box-shadow:0 12px 36px rgba(0,0,0,.5);backdrop-filter:blur(16px)}
-#toast.show{transform:translateY(0);opacity:1}
-#toast.teal{border-color:rgba(0,229,204,.3)}
-#toast.coral{border-color:rgba(255,90,53,.3)}
-
-/* ── EMPTY STATE ── */
-.empty{text-align:center;padding:48px 24px;color:var(--muted)}
-.empty-icon{font-size:44px;margin-bottom:14px}
-.empty-title{font-family:var(--ff-head);font-size:18px;font-weight:700;
-  color:var(--white);margin-bottom:8px}
-.empty-sub{font-size:14px;color:var(--muted);margin-bottom:20px}
-
-/* ── LOADING SKELETON ── */
-.skel{background:linear-gradient(90deg,var(--surface) 25%,var(--surface2) 50%,var(--surface) 75%);
-  background-size:200% 100%;animation:shimmer 1.6s infinite;border-radius:var(--radi-xs)}
-@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-
-/* ── RESPONSIVE ── */
-@media(max-width:900px){
-  .sidebar{display:none}
-  .main{padding:20px 16px}
-  .stats-row{grid-template-columns:1fr 1fr}
-  .qr-grid{grid-template-columns:1fr 1fr}
-  .analytics-stats{grid-template-columns:1fr}
-  .form-grid{grid-template-columns:1fr}
-  .fg.full{grid-column:1}
-}
-  
-/* ── LOGIN OVERLAY ── */
-#loginOverlay{
-  position:fixed;inset:0;z-index:9999;background:var(--bg);
-  display:flex;align-items:center;justify-content:center;
-  animation:none;
-}
-.login-box{
-  width:100%;max-width:400px;margin:20px;
-  background:var(--surface2);border:1px solid var(--border);
-  border-radius:24px;padding:40px 36px;text-align:center;
-}
-.login-logo{
-  font-family:var(--ff-head);font-size:44px;font-weight:800;
-  background:linear-gradient(135deg,var(--teal),var(--coral));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-  margin-bottom:6px;
-}
-.login-subtitle{font-size:13px;color:var(--muted);margin-bottom:30px;letter-spacing:.05em;}
-.login-label{display:block;text-align:left;font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;}
-.login-input{
-  width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);
-  border-radius:12px;color:var(--white);font-family:var(--ff-body);font-size:15px;
-  padding:13px 16px;outline:none;transition:border-color .2s;margin-bottom:18px;
-}
-.login-input:focus{border-color:rgba(0,229,204,.4);}
-.login-input::placeholder{color:var(--muted2);}
-.login-btn{
-  width:100%;padding:14px;border-radius:12px;border:none;
-  background:linear-gradient(135deg,var(--teal),#00BFAD);
-  color:#050510;font-family:var(--ff-body);font-size:15px;font-weight:700;
-  cursor:pointer;transition:all .2s;
-}
-.login-btn:hover{box-shadow:0 8px 24px rgba(0,229,204,.3);transform:translateY(-1px);}
-.login-err{
-  background:rgba(255,90,53,.1);border:1px solid rgba(255,90,53,.3);
-  border-radius:10px;padding:10px 14px;font-size:13px;color:#FF8260;
-  margin-top:14px;display:none;
-}
-/* ── REVIEWS TABLE ── */
-.rev-table{width:100%;border-collapse:separate;border-spacing:0 8px;}
-.rev-table th{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:0 14px 6px;text-align:left;}
-.rev-tr{background:var(--surface);border:1px solid var(--border);border-radius:var(--radi-sm);transition:all .2s;cursor:pointer;}
-.rev-tr:hover{border-color:rgba(0,229,204,.2);transform:translateY(-1px);}
-.rev-tr td{padding:14px;vertical-align:middle;}
-.rev-tr td:first-child{border-radius:var(--radi-sm) 0 0 var(--radi-sm);}
-.rev-tr td:last-child{border-radius:0 var(--radi-sm) var(--radi-sm) 0;}
-.rev-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:3px 10px;border-radius:100px;}
-.rev-badge.pos{background:rgba(0,229,204,.1);color:var(--teal);border:1px solid rgba(0,229,204,.2);}
-.rev-badge.neg{background:rgba(255,90,53,.1);color:var(--coral);border:1px solid rgba(255,90,53,.2);}
-.filter-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px;}
-.ftab{background:var(--surface);border:1px solid var(--border);color:var(--muted);font-family:var(--ff-body);font-size:12.5px;font-weight:500;padding:7px 14px;border-radius:100px;cursor:pointer;transition:all .2s;outline:none;}
-.ftab.active{background:rgba(0,229,204,.12);border-color:rgba(0,229,204,.4);color:var(--teal);}
-.ftab.coral.active{background:rgba(255,90,53,.12);border-color:rgba(255,90,53,.4);color:var(--coral);}
-/* Review detail modal */
-.mf-lbl{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
-.mf-val{font-size:14px;color:var(--white);line-height:1.6;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:14px;}
-
-
-/* ── LOGIN OVERLAY ── */
-#loginOverlay{
-  position:fixed;inset:0;z-index:9999;background:var(--bg);
-  display:flex;align-items:center;justify-content:center;
-}
-.login-box{
-  width:100%;max-width:380px;margin:20px;
-  background:var(--surface2);border:1px solid var(--border);
-  border-radius:24px;padding:40px 36px;text-align:center;
-}
-.login-logo{
-  font-family:var(--ff-head);font-size:44px;font-weight:800;
-  background:linear-gradient(135deg,var(--teal),var(--coral));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-  margin-bottom:6px;
-}
-.login-subtitle{font-size:13px;color:var(--muted);margin-bottom:28px;}
-.login-lbl{display:block;text-align:left;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:7px;}
-.login-inp{
-  width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);
-  border-radius:11px;color:var(--white);font-family:var(--ff-body);font-size:15px;
-  padding:13px 15px;outline:none;transition:border-color .2s;margin-bottom:16px;
-}
-.login-inp:focus{border-color:rgba(0,229,204,.4);}
+/* LOGIN */
+#loginScreen{position:fixed;inset:0;z-index:1000;background:var(--bg);display:flex;align-items:center;justify-content:center;}
+.login-box{width:100%;max-width:380px;margin:20px;background:var(--surface2);border:1px solid var(--border);border-radius:24px;padding:44px 38px;text-align:center;position:relative;z-index:1;}
+.login-logo{font-family:var(--ff-head);font-size:46px;font-weight:800;background:linear-gradient(135deg,var(--teal),var(--coral));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:4px;}
+.login-sub{font-size:13px;color:var(--muted);margin-bottom:32px;}
+.login-lbl{display:block;text-align:left;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;}
+.login-inp{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:11px;color:var(--white);font-family:var(--ff-body);font-size:15px;padding:13px 16px;outline:none;transition:border-color .2s;margin-bottom:18px;}
+.login-inp:focus{border-color:rgba(0,229,204,.45);}
 .login-inp::placeholder{color:var(--muted2);}
-.login-btn{
-  width:100%;padding:14px;border-radius:11px;border:none;
-  background:linear-gradient(135deg,var(--teal),#00BFAD);
-  color:#050510;font-family:var(--ff-body);font-size:15px;font-weight:700;cursor:pointer;
-  transition:all .2s;
-}
+.login-btn{width:100%;padding:14px;border-radius:11px;border:none;background:linear-gradient(135deg,var(--teal),var(--teal2));color:#050510;font-family:var(--ff-body);font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;}
 .login-btn:hover{box-shadow:0 8px 24px rgba(0,229,204,.3);transform:translateY(-1px);}
-.login-err{
-  background:rgba(255,90,53,.1);border:1px solid rgba(255,90,53,.3);
-  border-radius:9px;padding:10px 14px;font-size:13px;color:#FF8260;
-  margin-top:12px;display:none;
-}
-/* ── REVIEWS ── */
+.login-err{background:rgba(255,90,53,.1);border:1px solid rgba(255,90,53,.3);border-radius:9px;padding:10px 14px;font-size:13px;color:#FF8260;margin-top:14px;display:none;}
+
+/* APP SHELL */
+#appShell{display:none;}
+.app-wrap{display:flex;min-height:100vh;}
+
+/* SIDEBAR */
+.sidebar{width:220px;flex-shrink:0;height:100vh;position:sticky;top:0;background:rgba(12,12,30,.96);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:24px 16px;z-index:10;backdrop-filter:blur(20px);}
+.s-logo{font-family:var(--ff-head);font-size:26px;font-weight:800;background:linear-gradient(135deg,var(--teal),var(--coral));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:4px;padding:0 8px;}
+.s-tagline{font-size:11px;color:var(--muted2);letter-spacing:.08em;text-transform:uppercase;padding:0 8px;margin-bottom:28px;}
+.s-section{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted2);padding:0 8px;margin-bottom:8px;margin-top:16px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radi-xs);color:var(--muted);font-size:14px;font-weight:500;cursor:pointer;transition:all .2s;border:none;background:none;width:100%;text-align:left;outline:none;}
+.nav-item .ni{font-size:18px;flex-shrink:0;}
+.nav-item:hover{background:var(--surface2);color:var(--white);}
+.nav-item.active{background:linear-gradient(135deg,rgba(0,229,204,.12),rgba(255,90,53,.08));color:var(--teal);border:1px solid rgba(0,229,204,.15);}
+.s-footer{margin-top:auto;padding:12px 8px 0;border-top:1px solid var(--border);}
+.s-footer-text{font-size:11px;color:var(--muted2);line-height:1.5;margin-bottom:8px;}
+.logout-btn{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:var(--radi-xs);color:var(--coral);font-size:13px;cursor:pointer;border:none;background:none;width:100%;transition:background .2s;}
+.logout-btn:hover{background:rgba(255,90,53,.08);}
+
+/* MAIN */
+.main{flex:1;min-height:100vh;overflow-y:auto;position:relative;z-index:1;padding:32px;}
+.page-header{margin-bottom:28px;}
+.page-title{font-family:var(--ff-head);font-size:28px;font-weight:800;letter-spacing:-.5px;margin-bottom:5px;}
+.page-sub{font-size:14px;color:var(--muted);}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px;}
+.card-label{font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);margin-bottom:18px;display:flex;align-items:center;gap:8px;}
+.card-label::after{content:'';flex:1;height:1px;background:linear-gradient(to right,rgba(0,229,204,.25),transparent);}
+
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radi-sm);padding:20px;transition:all .2s;}
+.stat-card:hover{border-color:rgba(0,229,204,.2);transform:translateY(-2px);}
+.stat-icon{font-size:22px;margin-bottom:12px;}
+.stat-val{font-family:var(--ff-head);font-size:28px;font-weight:800;margin-bottom:4px;}
+.stat-lbl{font-size:12px;color:var(--muted);}
+
+/* BIZ */
+.biz-list{display:flex;flex-direction:column;gap:10px;}
+.biz-row{display:flex;align-items:center;gap:16px;padding:16px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radi-sm);transition:all .2s;}
+.biz-row:hover{border-color:rgba(0,229,204,.2);}
+.biz-emoji{font-size:30px;flex-shrink:0;}
+.biz-info{flex:1;min-width:0;}
+.biz-name{font-family:var(--ff-head);font-size:15px;font-weight:700;margin-bottom:2px;}
+.biz-meta{font-size:12px;color:var(--muted);display:flex;gap:12px;flex-wrap:wrap;}
+.biz-actions{display:flex;gap:8px;flex-shrink:0;}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:var(--radi-xs);font-family:var(--ff-body);font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;outline:none;border:none;}
+.btn-teal{background:linear-gradient(135deg,var(--teal),var(--teal2));color:#050510;font-weight:600;}
+.btn-teal:hover{box-shadow:0 6px 20px rgba(0,229,204,.3);transform:translateY(-1px);}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--muted);}
+.btn-outline:hover{border-color:rgba(0,229,204,.3);color:var(--teal);}
+
+/* FORM */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.fg{display:flex;flex-direction:column;gap:6px;}
+.fg.full{grid-column:1/-1;}
+.fg label{font-size:12px;color:var(--muted);font-weight:500;}
+.fg input,.fg select,.fg textarea{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radi-xs);color:var(--white);font-family:var(--ff-body);font-size:14px;padding:11px 14px;outline:none;transition:border-color .2s;}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:rgba(0,229,204,.4);}
+.fg select option{background:var(--bg2);}
+.fg textarea{resize:vertical;min-height:80px;}
+.form-hint{font-size:11px;color:var(--muted2);margin-top:3px;}
+
+/* QR */
+.qr-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.qr-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radi-sm);padding:20px;text-align:center;transition:all .2s;}
+.qr-card:hover{border-color:rgba(0,229,204,.2);}
+.qr-name{font-family:var(--ff-head);font-size:14px;font-weight:700;margin-bottom:4px;}
+.qr-type{font-size:11.5px;color:var(--muted);text-transform:capitalize;margin-bottom:14px;}
+.qr-preview{width:120px;height:120px;background:#fff;border-radius:10px;margin:0 auto 14px;padding:6px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#999;}
+.qr-preview img{width:100%;height:100%;object-fit:contain;}
+
+/* ANALYTICS */
+.analytics-biz-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px;}
+.abtn{padding:9px 16px;border-radius:100px;border:1px solid var(--border);background:none;color:var(--muted);font-family:var(--ff-body);font-size:13px;cursor:pointer;transition:all .2s;outline:none;}
+.abtn:hover,.abtn.active{background:rgba(0,229,204,.1);border-color:rgba(0,229,204,.3);color:var(--teal);}
+.rating-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.rb-label{font-size:13px;color:var(--muted);width:30px;text-align:right;flex-shrink:0;}
+.rb-track{flex:1;height:10px;background:var(--surface2);border-radius:5px;overflow:hidden;}
+.rb-fill{height:100%;border-radius:5px;background:linear-gradient(90deg,var(--teal),var(--coral));transition:width .8s ease;}
+.rb-count{font-size:12px;color:var(--muted);width:28px;flex-shrink:0;}
+.analytics-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
+
+/* REVIEWS */
+.filter-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px;}
+.ftab{background:var(--surface);border:1px solid var(--border);color:var(--muted);font-family:var(--ff-body);font-size:12.5px;padding:7px 14px;border-radius:100px;cursor:pointer;transition:all .2s;outline:none;}
+.ftab.active{background:rgba(0,229,204,.12);border-color:rgba(0,229,204,.4);color:var(--teal);}
+.ftab.neg.active{background:rgba(255,90,53,.12);border-color:rgba(255,90,53,.4);color:var(--coral);}
 .rev-table{width:100%;border-collapse:separate;border-spacing:0 8px;}
 .rev-table th{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:0 12px 6px;text-align:left;}
 .rev-tr{background:var(--surface);border:1px solid var(--border);border-radius:var(--radi-sm);transition:all .2s;cursor:pointer;}
@@ -320,169 +140,162 @@ body{background:var(--bg);color:var(--white);font-family:var(--ff-body);
 .rev-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:3px 10px;border-radius:100px;}
 .rev-badge.pos{background:rgba(0,229,204,.1);color:var(--teal);border:1px solid rgba(0,229,204,.2);}
 .rev-badge.neg{background:rgba(255,90,53,.1);color:var(--coral);border:1px solid rgba(255,90,53,.2);}
-.filter-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px;}
-.ftab{background:var(--surface);border:1px solid var(--border);color:var(--muted);font-family:var(--ff-body);font-size:12.5px;padding:7px 14px;border-radius:100px;cursor:pointer;transition:all .2s;outline:none;}
-.ftab.active{background:rgba(0,229,204,.12);border-color:rgba(0,229,204,.4);color:var(--teal);}
-.ftab.coral.active{background:rgba(255,90,53,.12);border-color:rgba(255,90,53,.4);color:var(--coral);}
 .mf-lbl{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
 .mf-val{font-size:14px;color:var(--white);line-height:1.6;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:9px;padding:11px 13px;margin-bottom:13px;}
-/* Logout btn in sidebar footer */
-.logout-link{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:var(--radi-xs);color:var(--coral);font-size:13px;font-weight:500;cursor:pointer;border:none;background:none;width:100%;margin-top:8px;transition:background .2s;}
-.logout-link:hover{background:rgba(255,90,53,.08);}
 
-</style>
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(7,7,18,.9);z-index:500;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(10px);opacity:0;pointer-events:none;transition:opacity .3s;}
+.modal-bg.show{opacity:1;pointer-events:all;}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:32px;width:90%;max-width:560px;max-height:85vh;overflow-y:auto;transform:translateY(20px) scale(.97);transition:transform .35s cubic-bezier(.34,1.56,.64,1);}
+.modal-bg.show .modal{transform:translateY(0) scale(1);}
+.modal-title{font-family:var(--ff-head);font-size:22px;font-weight:800;margin-bottom:22px;}
+.modal-footer{display:flex;gap:10px;margin-top:22px;justify-content:flex-end;}
+.qr-modal-preview{background:#fff;border-radius:16px;padding:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;width:200px;height:200px;}
+.qr-modal-preview img{width:100%;height:100%;object-fit:contain;}
+.qr-url-box{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radi-xs);padding:12px 14px;font-size:12px;color:var(--muted);word-break:break-all;margin-bottom:18px;line-height:1.5;}
+.qr-modal-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+
+/* TOAST */
+#toast{position:fixed;bottom:24px;right:24px;background:rgba(12,12,30,.97);border:1px solid var(--border);color:var(--white);font-family:var(--ff-body);font-size:13.5px;font-weight:500;padding:13px 20px;border-radius:100px;display:flex;align-items:center;gap:9px;z-index:9000;transform:translateY(60px);opacity:0;transition:all .4s cubic-bezier(.34,1.56,.64,1);box-shadow:0 12px 36px rgba(0,0,0,.5);backdrop-filter:blur(16px);}
+#toast.show{transform:translateY(0);opacity:1;}
+#toast.teal{border-color:rgba(0,229,204,.3);}
+#toast.coral{border-color:rgba(255,90,53,.3);}
+
+/* EMPTY + SKELETON */
+.empty{text-align:center;padding:48px 24px;color:var(--muted);}
+.empty-icon{font-size:44px;margin-bottom:14px;}
+.empty-title{font-family:var(--ff-head);font-size:18px;font-weight:700;color:var(--white);margin-bottom:8px;}
+.empty-sub{font-size:14px;color:var(--muted);margin-bottom:20px;}
+.skel{background:linear-gradient(90deg,var(--surface) 25%,var(--surface2) 50%,var(--surface) 75%);background-size:200% 100%;animation:shimmer 1.6s infinite;border-radius:var(--radi-xs);}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+@media(max-width:900px){
+  .sidebar{display:none;}
+  .main{padding:20px 16px;}
+  .stats-row,.qr-grid{grid-template-columns:1fr 1fr;}
+  .analytics-stats{grid-template-columns:1fr;}
+  .form-grid{grid-template-columns:1fr;}
+  .fg.full{grid-column:1;}
+}
+  </style>
 </head>
 <body>
 
-<!-- ── LOGIN OVERLAY ── -->
-<div id="loginOverlay">
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="mesh"><div class="orb o1"></div><div class="orb o2"></div></div>
   <div class="login-box">
     <div class="login-logo">Zuit</div>
-    <div class="login-subtitle">Admin Dashboard · Secure Access</div>
-    <label class="login-label">Password</label>
-    <input type="password" class="login-input" id="adminPw" placeholder="Enter admin password" onkeydown="if(event.key==='Enter')doAdminLogin()"/>
-    <button class="login-btn" onclick="doAdminLogin()">🔐 Login</button>
-    <div class="login-err" id="loginErr">❌ Wrong password. Try again.</div>
-  </div>
-</div>
-
-<!-- ── LOGIN OVERLAY ── -->
-<div id="loginOverlay">
-  <div class="login-box">
-    <div class="login-logo">Zuit</div>
-    <div class="login-subtitle">Admin Dashboard · Secure Access</div>
+    <div class="login-sub">Admin Dashboard &middot; Secure Access</div>
     <label class="login-lbl">Password</label>
     <input type="password" class="login-inp" id="adminPw" placeholder="Enter admin password"
-      onkeydown="if(event.key==='Enter')doAdminLogin()"/>
-    <button class="login-btn" onclick="doAdminLogin()">🔐 Login</button>
-    <div class="login-err" id="loginErr">❌ Wrong password. Try again.</div>
+      onkeydown="if(event.key==='Enter')doLogin()"/>
+    <button class="login-btn" onclick="doLogin()">&#x1F510; Login</button>
+    <div class="login-err" id="loginErr">&#x274C; Wrong password. Try again.</div>
   </div>
 </div>
 
-<!-- ── APP SHELL (hidden until logged in) ── -->
-<div id="appShell" style="display:none;flex:1;min-height:100vh">
-<div class="mesh"><div class="orb o1"></div><div class="orb o2"></div></div>
+<!-- APP -->
+<div id="appShell">
+  <div class="mesh"><div class="orb o1"></div><div class="orb o2"></div></div>
+  <div class="app-wrap">
 
-<!-- ── SIDEBAR ── -->
-<div class="sidebar">
-  <div class="s-logo">Zuit</div>
-  <div class="s-tagline">Admin Dashboard</div>
-
-  <div class="s-section">Main</div>
-  <button class="nav-item active" onclick="goto('home')"><span class="ni">🏠</span>Overview</button>
-  <button class="nav-item" onclick="goto('businesses')"><span class="ni">🏢</span>Businesses</button>
-  <button class="nav-item" onclick="goto('qrcodes')"><span class="ni">📱</span>QR Codes</button>
-  <button class="nav-item" onclick="goto('analytics')"><span class="ni">📊</span>Analytics</button>
-  <button class="nav-item" onclick="goto('reviews')"><span class="ni">📋</span>Reviews</button>
-
-  <div class="s-section">Actions</div>
-  <button class="nav-item" onclick="openAddModal()"><span class="ni">➕</span>Add Business</button>
-  <button class="nav-item" onclick="goto('reviews')"><span class="ni">📋</span>Reviews</button>
-  <button class="nav-item" onclick="window.open('/','_blank')"><span class="ni">🌐</span>View Site</button>
-
-  <div class="s-footer">
-    <div class="s-footer-text">Zuit AI Review Platform<br>v2.0 · Node.js + MongoDB</div>
-    <button class="logout-link" onclick="doLogout()">🚪 Logout</button>
-  </div>
-</div>
-
-<!-- ── MAIN CONTENT ── -->
-<div class="main" id="mainContent"></div>
-
-<!-- ── ADD BUSINESS MODAL ── -->
-<div class="modal-bg" id="addModal">
-  <div class="modal">
-    <div class="modal-title">Add New Business</div>
-    <div class="form-grid">
-      <div class="fg"><label>Business ID (slug) *</label>
-        <input id="f-id" placeholder="my-restaurant-001"/>
-        <div class="form-hint">Lowercase, hyphens only. e.g. spice-garden-001</div>
+    <div class="sidebar">
+      <div class="s-logo">Zuit</div>
+      <div class="s-tagline">Admin Dashboard</div>
+      <div class="s-section">Main</div>
+      <button class="nav-item active" id="nav-home"       onclick="goto('home')">      <span class="ni">&#x1F3E0;</span>Overview</button>
+      <button class="nav-item"        id="nav-businesses" onclick="goto('businesses')"><span class="ni">&#x1F3E2;</span>Businesses</button>
+      <button class="nav-item"        id="nav-qrcodes"    onclick="goto('qrcodes')">   <span class="ni">&#x1F4F1;</span>QR Codes</button>
+      <button class="nav-item"        id="nav-analytics"  onclick="goto('analytics')"> <span class="ni">&#x1F4CA;</span>Analytics</button>
+      <button class="nav-item"        id="nav-reviews"    onclick="goto('reviews')">   <span class="ni">&#x1F4CB;</span>Reviews</button>
+      <div class="s-section">Actions</div>
+      <button class="nav-item" onclick="openAddModal()"><span class="ni">&#x2795;</span>Add Business</button>
+      <div class="s-footer">
+        <div class="s-footer-text">Zuit AI &middot; v2.0 MongoDB</div>
+        <button class="logout-btn" onclick="doLogout()">&#x1F6AA; Logout</button>
       </div>
-      <div class="fg"><label>Business Type *</label>
-        <select id="f-type">
-          <option value="restaurant">🍽️ Restaurant</option>
-          <option value="hotel">🏨 Hotel</option>
-          <option value="salon">💇 Salon</option>
-          <option value="bar">🍸 Bar / Pub</option>
-          <option value="hospital">🏥 Hospital</option>
-          <option value="cafe">☕ Cafe</option>
-          <option value="gym">💪 Gym</option>
-          <option value="spa">🧖 Spa</option>
-          <option value="retail">🛍️ Retail</option>
-          <option value="other">⭐ Other</option>
-        </select>
-      </div>
-      <div class="fg full"><label>Business Name *</label>
-        <input id="f-name" placeholder="Spice Garden Restaurant"/>
-      </div>
-      <div class="fg full"><label>Description</label>
-        <textarea id="f-desc" placeholder="Describe your business in 1-2 sentences…"></textarea>
-      </div>
-      <div class="fg full"><label>Image URL</label>
-        <input id="f-img" placeholder="https://images.unsplash.com/photo-xxx?w=800"/>
-        <div class="form-hint">Any direct image URL (Unsplash recommended)</div>
-      </div>
-      <div class="fg full"><label>Google Place ID *</label>
-        <input id="f-place" placeholder="ChIJN1t_tDeuEmsRUsoyG83frY4"/>
-        <div class="form-hint">Find your business on Google Maps → Share → copy Place ID from the embed link</div>
-      </div>
-      <div class="fg"><label>Address</label><input id="f-addr" placeholder="123 Main St, City"/></div>
-      <div class="fg"><label>Phone</label><input id="f-phone" placeholder="+91-98765-43210"/></div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('addModal')">Cancel</button>
-      <button class="btn btn-teal" onclick="addBusiness()">✓ Add Business</button>
+
+    <div class="main" id="mainContent">
+      <div class="card"><div class="skel" style="height:300px"></div></div>
+    </div>
+
+  </div>
+
+  <!-- ADD MODAL -->
+  <div class="modal-bg" id="addModal">
+    <div class="modal">
+      <div class="modal-title">Add New Business</div>
+      <div class="form-grid">
+        <div class="fg"><label>Business ID *</label><input id="f-id" placeholder="my-restaurant-001"/><div class="form-hint">Lowercase, hyphens only</div></div>
+        <div class="fg"><label>Type *</label>
+          <select id="f-type">
+            <option value="restaurant">Restaurant</option><option value="hotel">Hotel</option>
+            <option value="salon">Salon</option><option value="bar">Bar</option>
+            <option value="hospital">Hospital</option><option value="cafe">Cafe</option>
+            <option value="gym">Gym</option><option value="spa">Spa</option>
+            <option value="retail">Retail</option><option value="other">Other</option>
+          </select>
+        </div>
+        <div class="fg full"><label>Business Name *</label><input id="f-name" placeholder="Spice Garden"/></div>
+        <div class="fg full"><label>Description</label><textarea id="f-desc" placeholder="1-2 sentences…"></textarea></div>
+        <div class="fg full"><label>Image URL</label><input id="f-img" placeholder="https://images.unsplash.com/…"/></div>
+        <div class="fg full"><label>Google Place ID *</label><input id="f-place" placeholder="ChIJN1t_tDeuEmsRUsoyG83frY4"/><div class="form-hint">Google Maps &rarr; Share &rarr; copy Place ID</div></div>
+        <div class="fg"><label>Address</label><input id="f-addr" placeholder="123 Main St"/></div>
+        <div class="fg"><label>Phone</label><input id="f-phone" placeholder="+91-98765-43210"/></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('addModal')">Cancel</button>
+        <button class="btn btn-teal"    onclick="addBusiness()">&#x2713; Add</button>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- ── QR MODAL ── -->
-<div class="modal-bg" id="qrModal">
-  <div class="modal" style="max-width:420px;text-align:center">
-    <div class="modal-title" id="qrModalTitle">QR Code</div>
-    <div class="qr-modal-preview"><img id="qrImg" src="" alt="QR"/></div>
-    <div class="qr-url-box" id="qrUrlBox">Generating QR code...</div>
-    <div class="qr-modal-actions">
-      <button class="btn btn-teal" onclick="downloadQR()">⬇ Download PNG</button>
-      <button class="btn btn-outline" onclick="copyQRUrl()">🔗 Copy URL</button>
-      <button class="btn btn-outline" onclick="closeModal('qrModal')">Close</button>
+  <!-- QR MODAL -->
+  <div class="modal-bg" id="qrModal">
+    <div class="modal" style="max-width:420px;text-align:center">
+      <div class="modal-title" id="qrModalTitle">QR Code</div>
+      <div class="qr-modal-preview"><img id="qrImg" src="" alt="QR"/></div>
+      <div class="qr-url-box" id="qrUrlBox">Generating…</div>
+      <div class="qr-modal-actions">
+        <button class="btn btn-teal"    onclick="downloadQR()">&#x2B07; Download</button>
+        <button class="btn btn-outline" onclick="copyQRUrl()">&#x1F517; Copy URL</button>
+        <button class="btn btn-outline" onclick="closeModal('qrModal')">Close</button>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- ── TOAST ── -->
+</div><!-- end appShell -->
+
 <div id="toast"><span id="t-icon"></span><span id="t-msg"></span></div>
 
 <script>
-const API = "https://ai-review-system-1.onrender.com/api";
+var ADMIN_PASSWORD = "zuit@admin2024"; // ← CHANGE THIS
+var AUTH_KEY = "zuit_admin_v1";
+var API      = "https://ai-review-system-1.onrender.com/api";
 
-/* ═══ PASSWORD CONFIG — change this! ═══ */
-const ADMIN_PASSWORD = "zuit@admin2024";
-const AUTH_KEY = "zuit_admin_v1";
+var businesses   = [];
+var currentTab   = "home";
+var currentQR    = null;
+var allReviews   = [];
+var reviewFilter = "all";
+var ICONS = {restaurant:"🍽️",hotel:"🏨",salon:"💇",bar:"🍸",hospital:"🏥",cafe:"☕",gym:"💪",spa:"🧖",retail:"🛍️",other:"⭐"};
 
-/* ═══ STATE ═══ */
-let businesses = [];
-let currentTab = 'home';
-let currentQR  = null;
-let allReviewsData = [];
-let reviewFilter = 'all';
-
-const TYPE_ICONS = {restaurant:'🍽️',hotel:'🏨',salon:'💇',bar:'🍸',hospital:'🏥',cafe:'☕',gym:'💪',spa:'🧖',retail:'🛍️',other:'⭐'};
-
-/* ═══ AUTH ═══ */
-function doAdminLogin() {
-  const pw = document.getElementById('adminPw').value;
+/* AUTH */
+function doLogin() {
+  var pw = document.getElementById("adminPw").value;
   if (pw === ADMIN_PASSWORD) {
-    sessionStorage.setItem(AUTH_KEY, '1');
-    document.getElementById('loginOverlay').style.display = 'none';
-    document.getElementById('appShell').style.display = 'flex';
+    sessionStorage.setItem(AUTH_KEY, "1");
+    document.getElementById("loginScreen").style.display = "none";
+    document.getElementById("appShell").style.display    = "block";
     initDashboard();
   } else {
-    const err = document.getElementById('loginErr');
-    err.style.display = 'block';
-    document.getElementById('adminPw').value = '';
-    document.getElementById('adminPw').focus();
-    setTimeout(() => err.style.display = 'none', 3000);
+    var err = document.getElementById("loginErr");
+    err.style.display = "block";
+    document.getElementById("adminPw").value = "";
+    document.getElementById("adminPw").focus();
+    setTimeout(function(){ err.style.display = "none"; }, 3000);
   }
 }
 
@@ -491,471 +304,355 @@ function doLogout() {
   location.reload();
 }
 
-/* ═══ TOAST ═══ */
-let _tt;
-function toast(msg, type='teal', icon='✓') {
-  const el = document.getElementById('toast');
-  el.className = 'show ' + type;
-  document.getElementById('t-icon').textContent = icon;
-  document.getElementById('t-msg').textContent = msg;
-  clearTimeout(_tt); _tt = setTimeout(() => el.className = '', 3000);
+/* TOAST */
+var _tt;
+function toast(msg, type, icon) {
+  var el = document.getElementById("toast");
+  el.className = "show " + (type||"teal");
+  document.getElementById("t-icon").textContent = icon||"✓";
+  document.getElementById("t-msg").textContent  = msg;
+  clearTimeout(_tt);
+  _tt = setTimeout(function(){ el.className = ""; }, 3000);
 }
 
-/* ═══ NAVIGATION ═══ */
+/* NAV */
 function goto(tab) {
   currentTab = tab;
-  const tabs = ['home','businesses','qrcodes','analytics','reviews'];
-  document.querySelectorAll('.nav-item').forEach((el, i) => {
-    el.classList.toggle('active', tabs[i] === tab);
+  ["home","businesses","qrcodes","analytics","reviews"].forEach(function(t) {
+    var el = document.getElementById("nav-" + t);
+    if (el) el.classList.toggle("active", t === tab);
   });
-  if (tab === 'reviews')    { loadReviews('all'); return; }
-  if (tab === 'home')       { renderHome(); return; }
-  if (tab === 'businesses') { renderBusinesses(); return; }
-  if (tab === 'qrcodes')    { renderQRCodes(); return; }
-  if (tab === 'analytics')  { renderAnalytics(); return; }
+  if      (tab === "home")       renderHome();
+  else if (tab === "businesses") renderBiz();
+  else if (tab === "qrcodes")    renderQR();
+  else if (tab === "analytics")  renderAnalytics();
+  else if (tab === "reviews")    loadReviews("all");
 }
 
-/* ═══ FETCH BUSINESSES ═══ */
+/* LOAD BUSINESSES */
 async function loadBiz() {
   try {
-    const r = await fetch(`${API}/businesses`);
-    const d = await r.json();
+    var r = await fetch(API + "/businesses");
+    var d = await r.json();
     businesses = d.businesses || [];
-  } catch { businesses = []; }
+  } catch(e) { businesses = []; }
 }
 
-/* ═══ RENDER HOME ═══ */
+/* HOME */
 function renderHome() {
-  const mc = document.getElementById('mainContent');
-  mc.innerHTML = `
-    <div class="page-header">
-      <div class="page-title">Overview 👋</div>
-      <div class="page-sub">Zuit dashboard — sab kuch ek jagah</div>
-    </div>
-    <div class="stats-row">
-      <div class="stat-card">
-        <div class="stat-top"><div class="stat-icon">🏢</div></div>
-        <div class="stat-val">${businesses.length}</div>
-        <div class="stat-lbl">Total Businesses</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-top"><div class="stat-icon">⭐</div></div>
-        <div class="stat-val">${businesses.reduce((s,b)=>s+(b.reviewCount||0),0)}</div>
-        <div class="stat-lbl">Total Reviews</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-top"><div class="stat-icon">📱</div></div>
-        <div class="stat-val">${businesses.length}</div>
-        <div class="stat-lbl">QR Codes Ready</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-top"><div class="stat-icon">🤖</div></div>
-        <div class="stat-val">AI</div>
-        <div class="stat-lbl">Groq Engine</div>
-      </div>
-    </div>
-    <div class="card" style="margin-bottom:20px">
-      <div class="card-label">Quick Actions</div>
-      <div style="display:flex;gap:12px;flex-wrap:wrap">
-        <button class="btn btn-teal" onclick="openAddModal()">➕ Add Business</button>
-        <button class="btn btn-outline" onclick="goto('qrcodes')">📱 QR Codes</button>
-        <button class="btn btn-outline" onclick="goto('reviews')">📋 Reviews</button>
-        <button class="btn btn-outline" onclick="goto('analytics')">📊 Analytics</button>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-label">Recent Businesses</div>
-      ${businesses.length === 0
-        ? emptyState('No businesses yet','Add your first business','openAddModal()')
-        : `<div class="biz-list">${businesses.slice(0,5).map(b=>bizRow(b)).join('')}</div>`}
-    </div>`;
+  var mc = document.getElementById("mainContent");
+  var totalRev = businesses.reduce(function(s,b){ return s+(b.reviewCount||0); }, 0);
+  mc.innerHTML =
+    '<div class="page-header"><div class="page-title">Overview 👋</div><div class="page-sub">Zuit dashboard</div></div>' +
+    '<div class="stats-row">' +
+      sc("🏢", businesses.length, "Businesses") +
+      sc("💬", totalRev, "Total Reviews") +
+      sc("📱", businesses.length, "QR Codes") +
+      sc("🤖", "AI", "Groq Engine") +
+    "</div>" +
+    '<div class="card"><div class="card-label">Quick Actions</div>' +
+    '<div style="display:flex;gap:12px;flex-wrap:wrap">' +
+      '<button class="btn btn-teal" onclick="openAddModal()">➕ Add Business</button>' +
+      '<button class="btn btn-outline" onclick="goto(\'qrcodes\')">📱 QR Codes</button>' +
+      '<button class="btn btn-outline" onclick="goto(\'reviews\')">📋 Reviews</button>' +
+      '<button class="btn btn-outline" onclick="goto(\'analytics\')">📊 Analytics</button>' +
+    "</div></div>" +
+    '<div class="card"><div class="card-label">Businesses</div>' +
+    (businesses.length === 0 ? emptyHTML("No businesses yet","Add your first","openAddModal()") :
+      '<div class="biz-list">' + businesses.slice(0,5).map(bizRowHTML).join("") + "</div>") +
+    "</div>";
 }
 
-/* ═══ RENDER BUSINESSES ═══ */
-function renderBusinesses() {
-  const mc = document.getElementById('mainContent');
-  mc.innerHTML = `
-    <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px">
-      <div>
-        <div class="page-title">Businesses 🏢</div>
-        <div class="page-sub">${businesses.length} registered</div>
-      </div>
-      <button class="btn btn-teal" onclick="openAddModal()">➕ Add New</button>
-    </div>
-    <div class="card">
-      <div class="card-label">All Businesses</div>
-      ${businesses.length === 0
-        ? emptyState('No businesses yet','Add your first business','openAddModal()')
-        : `<div class="biz-list">${businesses.map(b=>bizRow(b,true)).join('')}</div>`}
-    </div>`;
+function sc(icon, val, lbl) {
+  return '<div class="stat-card"><div class="stat-icon">' + icon + '</div><div class="stat-val">' + val + '</div><div class="stat-lbl">' + lbl + '</div></div>';
 }
 
-function bizRow(b, showAll=false) {
-  return `<div class="biz-row">
-    <div class="biz-emoji">${TYPE_ICONS[b.type]||'⭐'}</div>
-    <div class="biz-info">
-      <div class="biz-name">${b.name}</div>
-      <div class="biz-meta">
-        <span>📂 ${b.type}</span>
-        <span>🔑 ${b._id}</span>
-        <span>⭐ ${b.rating||'N/A'}</span>
-        <span>💬 ${b.reviewCount||0} reviews</span>
-      </div>
-    </div>
-    <div class="biz-actions">
-      <button class="btn btn-outline" onclick="showQR('${b._id}','${b.name}')">📱 QR</button>
-      <button class="btn btn-outline" onclick="window.open('/review/${b._id}','_blank')">👁</button>
-    </div>
-  </div>`;
+/* BUSINESSES */
+function renderBiz() {
+  var mc = document.getElementById("mainContent");
+  mc.innerHTML =
+    '<div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px">' +
+    '<div><div class="page-title">Businesses 🏢</div><div class="page-sub">' + businesses.length + ' registered</div></div>' +
+    '<button class="btn btn-teal" onclick="openAddModal()">➕ Add New</button></div>' +
+    '<div class="card"><div class="card-label">All</div>' +
+    (businesses.length === 0 ? emptyHTML("No businesses","Add karo","openAddModal()") :
+      '<div class="biz-list">' + businesses.map(bizRowHTML).join("") + "</div>") +
+    "</div>";
 }
 
-/* ═══ RENDER QR CODES ═══ */
-function renderQRCodes() {
-  const mc = document.getElementById('mainContent');
-  mc.innerHTML = `
-    <div class="page-header">
-      <div class="page-title">QR Codes 📱</div>
-      <div class="page-sub">Har business ka unique QR — print karo aur display karo</div>
-    </div>
-    ${businesses.length === 0
-      ? `<div class="card">${emptyState('No businesses yet','Pehle business add karo','openAddModal()')}</div>`
-      : `<div class="qr-grid">${businesses.map(b=>`
-        <div class="qr-card">
-          <div class="qr-emoji">${TYPE_ICONS[b.type]||'⭐'}</div>
-          <div class="qr-name">${b.name}</div>
-          <div class="qr-type">${b.type}</div>
-          <div class="qr-preview" id="qr-prev-${b._id}">
-            <span style="font-size:10px;color:#aaa">Click to generate</span>
-          </div>
-          <div class="qr-actions">
-            <button class="btn btn-teal" onclick="showQR('${b._id}','${b.name}')">Generate & Download</button>
-          </div>
-        </div>`).join('')}
-      </div>`}`;
+function bizRowHTML(b) {
+  var name = b.name.replace(/'/g, "\\'");
+  return '<div class="biz-row">' +
+    '<div class="biz-emoji">' + (ICONS[b.type]||"⭐") + "</div>" +
+    '<div class="biz-info"><div class="biz-name">' + b.name + "</div>" +
+    '<div class="biz-meta"><span>📂 ' + b.type + "</span><span>🔑 " + b._id + "</span><span>💬 " + (b.reviewCount||0) + "</span></div></div>" +
+    '<div class="biz-actions">' +
+      '<button class="btn btn-outline" onclick="showQR(\'' + b._id + "','" + name + '\')">📱 QR</button>' +
+      '<button class="btn btn-outline" onclick="window.open(\'/review/' + b._id + "','_blank')\">👁</button>" +
+    "</div></div>";
 }
 
-/* ═══ RENDER ANALYTICS ═══ */
-function renderAnalytics() {
-  const mc = document.getElementById('mainContent');
-  mc.innerHTML = `
-    <div class="page-header">
-      <div class="page-title">Analytics 📊</div>
-      <div class="page-sub">Business select karo analytics dekhne ke liye</div>
-    </div>
-    <div class="analytics-biz-grid" id="bizFilters">
-      ${businesses.map(b=>`
-        <button class="abtn" onclick="loadAnalytics('${b._id}','${b.name}',this)">
-          ${TYPE_ICONS[b.type]||'⭐'} ${b.name}
-        </button>`).join('')}
-    </div>
-    <div id="analyticsData">
-      <div class="card">
-        <div style="text-align:center;padding:48px;color:var(--muted)">
-          <div style="font-size:40px;margin-bottom:12px">📊</div>
-          <div style="font-family:var(--ff-head);font-size:16px;color:var(--white);margin-bottom:8px">Business select karo</div>
-        </div>
-      </div>
-    </div>`;
-}
-
-async function loadAnalytics(id, name, btn) {
-  document.querySelectorAll('.abtn').forEach(b=>b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-  const el = document.getElementById('analyticsData');
-  el.innerHTML = `<div class="card"><div class="skel" style="height:200px"></div></div>`;
-  try {
-    const r = await fetch(`${API}/analytics/${id}`);
-    const d = await r.json();
-    const s = d.summary;
-    if (!s) {
-      el.innerHTML = `<div class="card">${emptyState('No data yet','Is business ka koi review nahi aaya abhi','')}</div>`;
-      return;
-    }
-    const bars = d.ratingDist.map(r=>`
-      <div class="rating-bar-row">
-        <div class="rb-label">${r.stars}★</div>
-        <div class="rb-track"><div class="rb-fill" style="width:${s.total?(r.count/s.total*100).toFixed(0):0}%"></div></div>
-        <div class="rb-count">${r.count}</div>
-      </div>`).reverse().join('');
-    el.innerHTML = `
-      <div class="analytics-stats">
-        <div class="stat-card"><div class="stat-top"><div class="stat-icon">💬</div></div><div class="stat-val">${s.total}</div><div class="stat-lbl">Total Reviews</div></div>
-        <div class="stat-card"><div class="stat-top"><div class="stat-icon">⭐</div></div><div class="stat-val">${s.avgRating}</div><div class="stat-lbl">Avg Rating</div></div>
-        <div class="stat-card"><div class="stat-top"><div class="stat-icon">🌟</div></div><div class="stat-val">${s.conversionRate}%</div><div class="stat-lbl">Google Post Rate</div></div>
-      </div>
-      <div class="card">
-        <div class="card-label">${name} — Rating Distribution</div>
-        <div style="display:flex;flex-direction:column;gap:8px">${bars}</div>
-      </div>`;
-  } catch {
-    el.innerHTML = `<div class="card"><div style="color:var(--muted);text-align:center;padding:40px">Data load nahi hua. Backend check karo.</div></div>`;
+/* QR */
+function renderQR() {
+  var mc = document.getElementById("mainContent");
+  if (!businesses.length) {
+    mc.innerHTML = '<div class="page-header"><div class="page-title">QR Codes 📱</div></div><div class="card">' + emptyHTML("No businesses","Add karo","openAddModal()") + "</div>";
+    return;
   }
+  mc.innerHTML = '<div class="page-header"><div class="page-title">QR Codes 📱</div><div class="page-sub">Print karo aur display karo</div></div>' +
+    '<div class="qr-grid">' + businesses.map(function(b) {
+      var name = b.name.replace(/'/g, "\\'");
+      return '<div class="qr-card">' +
+        '<div style="font-size:32px;margin-bottom:8px">' + (ICONS[b.type]||"⭐") + "</div>" +
+        '<div class="qr-name">' + b.name + "</div><div class='qr-type'>" + b.type + "</div>" +
+        '<div class="qr-preview" id="qprev-' + b._id + '"><span>Click below</span></div>' +
+        '<button class="btn btn-teal" style="width:100%;justify-content:center;margin-top:8px" onclick="showQR(\'' + b._id + "','" + name + '\')">Generate & Download</button>' +
+      "</div>";
+    }).join("") + "</div>";
 }
 
-/* ═══ RENDER REVIEWS (MongoDB) ═══ */
-async function loadReviews(filter) {
-  reviewFilter = filter;
-  const mc = document.getElementById('mainContent');
-  mc.innerHTML = `
-    <div class="page-header"><div class="page-title">Reviews 📋</div><div class="page-sub">Loading…</div></div>
-    <div class="card"><div class="skel" style="height:300px"></div></div>`;
-  try {
-    let url = `${API}/reviews`;
-    if (filter === 'positive') url += '?type=positive';
-    else if (filter === 'negative') url += '?type=negative';
-    const r = await fetch(url);
-    const d = await r.json();
-    allReviewsData = d.reviews || [];
-    renderReviewsPage(d.stats || {});
-  } catch {
-    mc.innerHTML = `<div class="page-header"><div class="page-title">Reviews 📋</div></div>
-      <div class="card"><div style="text-align:center;padding:40px;color:var(--muted)">Backend se connect nahi hua. Server check karo.</div></div>`;
-  }
-}
-
-function renderReviewsPage(stats) {
-  const mc = document.getElementById('mainContent');
-  const revs = allReviewsData;
-
-  const tableHTML = revs.length === 0
-    ? `<div class="empty">
-        <div class="empty-icon">${reviewFilter==='negative'?'✅':'📭'}</div>
-        <div class="empty-title">${reviewFilter==='negative'?'Koi negative review nahi!':'Abhi tak koi review nahi'}</div>
-        <div class="empty-sub">Reviews yahan dikhenge jab customers submit karenge.</div>
-       </div>`
-    : `<table class="rev-table">
-        <thead><tr>
-          <th>Type</th><th>Rating</th><th>Review</th><th>Business</th><th>Date</th><th></th>
-        </tr></thead>
-        <tbody>${revs.map(r => {
-          const stars = '⭐'.repeat(r.rating) + '☆'.repeat(5-r.rating);
-          const date = new Date(r.timestamp).toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'});
-          const badge = r.type==='positive'
-            ? '<span class="rev-badge pos">✅ Google</span>'
-            : '<span class="rev-badge neg">⚠️ Saved</span>';
-          const preview = (r.reviewText||'').slice(0,55) + ((r.reviewText||'').length>55?'…':'');
-          return `<tr class="rev-tr" onclick="openRevModal('${r._id}')">
-            <td>${badge}</td>
-            <td style="font-size:13px;letter-spacing:1px">${stars}</td>
-            <td style="font-size:12.5px;color:var(--muted);max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${preview||'—'}</td>
-            <td style="font-size:12.5px">${r.businessName||r.businessId||'—'}</td>
-            <td style="font-size:11.5px;color:var(--muted2)">${date}</td>
-            <td><button onclick="event.stopPropagation();deleteRev('${r._id}')"
-              style="background:none;border:1px solid rgba(255,90,53,.25);color:var(--coral);font-size:11px;padding:4px 10px;border-radius:100px;cursor:pointer;">Delete</button></td>
-          </tr>`;
-        }).join('')}</tbody>
-      </table>`;
-
-  mc.innerHTML = `
-    <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px">
-      <div>
-        <div class="page-title">Reviews 📋</div>
-        <div class="page-sub">
-          Total: ${stats.total||0} &nbsp;·&nbsp;
-          ✅ Positive: ${stats.positive||0} &nbsp;·&nbsp;
-          ⚠️ Negative: ${stats.negative||0} &nbsp;·&nbsp;
-          ⭐ Avg: ${stats.avgRating||'—'}
-        </div>
-      </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-teal" onclick="downloadRevCSV('all')">⬇ Download All</button>
-        <button class="btn btn-outline" onclick="downloadRevCSV('negative')">⬇ Negative CSV</button>
-        <button class="btn btn-outline" style="color:var(--coral);border-color:rgba(255,90,53,.3)" onclick="clearAllRevs()">🗑 Clear All</button>
-      </div>
-    </div>
-
-    <div class="filter-tabs">
-      <button class="ftab ${reviewFilter==='all'?'active':''}" onclick="loadReviews('all')">All</button>
-      <button class="ftab ${reviewFilter==='positive'?'active':''}" onclick="loadReviews('positive')">✅ Positive</button>
-      <button class="ftab coral ${reviewFilter==='negative'?'active':''}" onclick="loadReviews('negative')">⚠️ Negative</button>
-    </div>
-
-    <div class="card">${tableHTML}</div>
-
-    <div class="modal-bg" id="revModal" onclick="if(event.target===this)closeModal('revModal')">
-      <div class="modal" style="max-width:500px">
-        <div class="modal-title" id="revModalTitle">Review Detail</div>
-        <div id="revModalBody"></div>
-        <div class="modal-footer">
-          <button class="btn btn-outline" onclick="closeModal('revModal')">Close</button>
-        </div>
-      </div>
-    </div>`;
-}
-
-function openRevModal(id) {
-  const r = allReviewsData.find(x => x._id === id);
-  if (!r) return;
-  const stars = '⭐'.repeat(r.rating) + '☆'.repeat(5-r.rating);
-  const date = new Date(r.timestamp).toLocaleString('en-IN',{dateStyle:'long',timeStyle:'short'});
-  document.getElementById('revModalTitle').textContent = `Review — ${r.businessName||r.businessId}`;
-  document.getElementById('revModalBody').innerHTML = `
-    <div class="mf-lbl">Status</div>
-    <div class="mf-val">${r.type==='positive'?'✅ Google pe bheja gaya':'⚠️ Sirf save hua — Google pe nahi gaya'}</div>
-    <div class="mf-lbl">Rating</div>
-    <div class="mf-val" style="font-size:22px;letter-spacing:2px">${stars}</div>
-    <div class="mf-lbl">Review Text</div>
-    <div class="mf-val" style="white-space:pre-wrap;line-height:1.65">${r.reviewText||'(No text)'}</div>
-    <div class="mf-lbl">Chips Selected</div>
-    <div class="mf-val">${(r.chips||[]).join(', ')||'None'}</div>
-    <div class="mf-lbl">Business</div>
-    <div class="mf-val">${r.businessName||r.businessId}</div>
-    <div class="mf-lbl">Date</div>
-    <div class="mf-val">${date}</div>
-    <div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap">
-      <button class="btn btn-teal" onclick="navigator.clipboard.writeText(${JSON.stringify(r.reviewText||'')}).then(()=>toast('Copied!','teal','📋'))">📋 Copy Review</button>
-      <button class="btn btn-outline" style="color:var(--coral)" onclick="deleteRev('${r._id}');closeModal('revModal')">🗑 Delete</button>
-    </div>`;
-  document.getElementById('revModal').classList.add('show');
-}
-
-async function deleteRev(id) {
-  if (!confirm('Is review ko delete karo?')) return;
-  try {
-    await fetch(`${API}/reviews/${id}`, { method: 'DELETE' });
-    toast('Review deleted', 'teal', '🗑');
-    loadReviews(reviewFilter);
-  } catch { toast('Delete failed', 'coral', '✕'); }
-}
-
-async function clearAllRevs() {
-  if (!confirm('Saare reviews delete karna chahte ho? Ye undo nahi hoga!')) return;
-  try {
-    await fetch(`${API}/reviews`, { method: 'DELETE' });
-    toast('All reviews cleared', 'teal', '✓');
-    loadReviews(reviewFilter);
-  } catch { toast('Failed', 'coral', '✕'); }
-}
-
-function downloadRevCSV(type) {
-  const data = type==='negative' ? allReviewsData.filter(r=>r.type==='negative') : allReviewsData;
-  if (!data.length) { toast('Download ke liye koi review nahi', 'coral', '✕'); return; }
-  const headers = ['ID','Business','Rating','Type','Review','Chips','Sent to Google','Date'];
-  const rows = data.map(r => [
-    r._id,
-    '"'+(r.businessName||r.businessId||'').replace(/"/g,'""')+'"',
-    r.rating,
-    r.type,
-    '"'+(r.reviewText||'').replace(/"/g,'""')+'"',
-    '"'+(r.chips||[]).join(', ').replace(/"/g,'""')+'"',
-    r.sentToGoogle?'Yes':'No',
-    new Date(r.timestamp).toLocaleString('en-IN')
-  ]);
-  const csv = [headers.join(','), ...rows.map(r=>r.join(','))].join('\n');
-  const blob = new Blob([csv],{type:'text/csv'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `zuit_${type}_reviews_${new Date().toISOString().slice(0,10)}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
-  toast(`${data.length} reviews download ho gaye`, 'teal', '⬇');
-}
-
-/* ═══ QR MODAL ═══ */
 async function showQR(id, name) {
-  document.getElementById('qrModalTitle').textContent = `📱 ${name}`;
-  document.getElementById('qrImg').src = '';
-  document.getElementById('qrUrlBox').textContent = 'QR generate ho raha hai…';
-  document.getElementById('qrModal').classList.add('show');
+  document.getElementById("qrModalTitle").textContent = "📱 " + name;
+  document.getElementById("qrImg").src = "";
+  document.getElementById("qrUrlBox").textContent = "Generating…";
+  document.getElementById("qrModal").classList.add("show");
   try {
-    const base = window.location.origin;
-    // Add ?auto=1 so QR scan triggers auto mode
-    const r = await fetch(`${API}/qr/${id}?baseUrl=${encodeURIComponent(base)}`);
-    const d = await r.json();
-    // Modify URL to include ?auto=1
-    const autoUrl = d.reviewUrl + '?auto=1';
-    const QRCode = await import('https://cdn.jsdelivr.net/npm/qrcode@1.5.3/+esm').catch(()=>null);
-    document.getElementById('qrImg').src = d.qrDataUrl;
-    document.getElementById('qrUrlBox').textContent = autoUrl;
-    currentQR = {...d, reviewUrl: autoUrl};
-  } catch {
-    document.getElementById('qrUrlBox').textContent = 'QR generate nahi hua. Backend check karo.';
+    var base = window.location.origin;
+    var r = await fetch(API + "/qr/" + id + "?baseUrl=" + encodeURIComponent(base));
+    var d = await r.json();
+    document.getElementById("qrImg").src = d.qrDataUrl;
+    var autoUrl = d.reviewUrl + (d.reviewUrl.indexOf("?") > -1 ? "&" : "?") + "auto=1";
+    document.getElementById("qrUrlBox").textContent = autoUrl;
+    currentQR = { qrDataUrl: d.qrDataUrl, reviewUrl: autoUrl, businessId: id };
+  } catch(e) {
+    document.getElementById("qrUrlBox").textContent = "Error. Backend check karo.";
   }
 }
 
 function downloadQR() {
   if (!currentQR) return;
-  const a = document.createElement('a');
+  var a = document.createElement("a");
   a.href = currentQR.qrDataUrl;
-  a.download = `zuit-qr-${currentQR.businessId}.png`;
+  a.download = "zuit-qr-" + currentQR.businessId + ".png";
   a.click();
-  toast('QR code download ho gaya! ✓','teal','⬇');
+  toast("QR download ho gaya!", "teal", "⬇");
 }
 
 function copyQRUrl() {
   if (!currentQR) return;
-  navigator.clipboard.writeText(currentQR.reviewUrl)
-    .then(() => toast('Review URL copy ho gaya!','teal','🔗'));
+  navigator.clipboard.writeText(currentQR.reviewUrl).then(function(){ toast("URL copy ho gaya!", "teal", "🔗"); });
 }
 
-/* ═══ ADD BUSINESS ═══ */
-function openAddModal() {
-  document.getElementById('addModal').classList.add('show');
+/* ANALYTICS */
+function renderAnalytics() {
+  var mc = document.getElementById("mainContent");
+  mc.innerHTML =
+    '<div class="page-header"><div class="page-title">Analytics 📊</div><div class="page-sub">Business select karo</div></div>' +
+    '<div class="analytics-biz-grid" id="bizFilters">' +
+    businesses.map(function(b) {
+      var name = b.name.replace(/'/g, "\\'");
+      return '<button class="abtn" onclick="loadAnalytics(\'' + b._id + "','" + name + '\',this)">' + (ICONS[b.type]||"⭐") + " " + b.name + "</button>";
+    }).join("") + "</div>" +
+    '<div id="analyticsData"><div class="card"><div style="text-align:center;padding:48px;color:var(--muted)"><div style="font-size:40px;margin-bottom:12px">📊</div><div>Upar se business select karo</div></div></div></div>';
 }
 
-function closeModal(id) {
-  document.getElementById(id).classList.remove('show');
+async function loadAnalytics(id, name, btn) {
+  document.querySelectorAll(".abtn").forEach(function(b){ b.classList.remove("active"); });
+  if (btn) btn.classList.add("active");
+  var el = document.getElementById("analyticsData");
+  el.innerHTML = '<div class="card"><div class="skel" style="height:200px"></div></div>';
+  try {
+    var r = await fetch(API + "/analytics/" + id);
+    var d = await r.json();
+    var s = d.summary;
+    if (!s) { el.innerHTML = '<div class="card">' + emptyHTML("No data yet","Koi review nahi aaya","") + "</div>"; return; }
+    var bars = d.ratingDist.slice().reverse().map(function(rv) {
+      var pct = s.total ? (rv.count/s.total*100).toFixed(0) : 0;
+      return '<div class="rating-bar-row"><div class="rb-label">' + rv.stars + '★</div><div class="rb-track"><div class="rb-fill" style="width:' + pct + '%"></div></div><div class="rb-count">' + rv.count + "</div></div>";
+    }).join("");
+    el.innerHTML =
+      '<div class="analytics-stats">' + sc("💬",s.total,"Total") + sc("⭐",s.avgRating,"Avg Rating") + sc("🌟",s.conversionRate+"%","Google Rate") + "</div>" +
+      '<div class="card"><div class="card-label">' + name + '</div><div style="display:flex;flex-direction:column;gap:8px">' + bars + "</div></div>";
+  } catch(e) {
+    el.innerHTML = '<div class="card"><div style="text-align:center;padding:40px;color:var(--muted)">Backend check karo.</div></div>';
+  }
 }
+
+/* REVIEWS */
+async function loadReviews(filter) {
+  reviewFilter = filter || "all";
+  var mc = document.getElementById("mainContent");
+  mc.innerHTML = '<div class="page-header"><div class="page-title">Reviews 📋</div><div class="page-sub">Loading…</div></div><div class="card"><div class="skel" style="height:300px"></div></div>';
+  try {
+    var url = API + "/reviews";
+    if (reviewFilter === "positive") url += "?type=positive";
+    else if (reviewFilter === "negative") url += "?type=negative";
+    var r = await fetch(url);
+    var d = await r.json();
+    allReviews = d.reviews || [];
+    renderReviewsPage(d.stats || {});
+  } catch(e) {
+    mc.innerHTML = '<div class="page-header"><div class="page-title">Reviews 📋</div></div><div class="card"><div style="text-align:center;padding:40px;color:var(--muted)">Backend connect nahi hua.</div></div>';
+  }
+}
+
+function renderReviewsPage(stats) {
+  var mc = document.getElementById("mainContent");
+  var tableHTML;
+  if (!allReviews.length) {
+    tableHTML = '<div class="empty"><div class="empty-icon">' + (reviewFilter==="negative"?"✅":"📭") + '</div>' +
+      '<div class="empty-title">' + (reviewFilter==="negative"?"Koi negative review nahi!":"Abhi koi review nahi") + '</div>' +
+      '<div class="empty-sub">Customers ke reviews yahan aayenge.</div></div>';
+  } else {
+    tableHTML = '<div style="overflow-x:auto"><table class="rev-table">' +
+      "<thead><tr><th>Type</th><th>Rating</th><th>Review</th><th>Business</th><th>Date</th><th></th></tr></thead><tbody>" +
+      allReviews.map(function(rv) {
+        var stars   = "⭐".repeat(rv.rating) + "☆".repeat(5-rv.rating);
+        var date    = new Date(rv.timestamp).toLocaleString("en-IN",{dateStyle:"medium",timeStyle:"short"});
+        var badge   = rv.type === "positive"
+          ? '<span class="rev-badge pos">✅ Google</span>'
+          : '<span class="rev-badge neg">⚠️ Saved</span>';
+        var preview = (rv.reviewText||"").slice(0,50) + ((rv.reviewText||"").length>50?"…":"");
+        return '<tr class="rev-tr" onclick="openRevModal(\'' + rv._id + '\')">' +
+          "<td>" + badge + "</td>" +
+          '<td style="font-size:12px;letter-spacing:1px">' + stars + "</td>" +
+          '<td style="font-size:12px;color:var(--muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (preview||"—") + "</td>" +
+          '<td style="font-size:12px">' + (rv.businessName||rv.businessId||"—") + "</td>" +
+          '<td style="font-size:11px;color:var(--muted2)">' + date + "</td>" +
+          '<td><button onclick="event.stopPropagation();deleteRev(\'' + rv._id + '\')" style="background:none;border:1px solid rgba(255,90,53,.25);color:var(--coral);font-size:11px;padding:4px 10px;border-radius:100px;cursor:pointer;">Delete</button></td>' +
+          "</tr>";
+      }).join("") +
+      "</tbody></table></div>";
+  }
+  mc.innerHTML =
+    '<div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px">' +
+    '<div><div class="page-title">Reviews 📋</div><div class="page-sub">Total: ' + (stats.total||0) + " · ✅ " + (stats.positive||0) + " · ⚠️ " + (stats.negative||0) + " · ⭐ " + (stats.avgRating||"—") + "</div></div>" +
+    '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+      '<button class="btn btn-teal" onclick="downloadRevCSV(\'all\')">⬇ Download All</button>' +
+      '<button class="btn btn-outline" onclick="downloadRevCSV(\'negative\')">⬇ Negative</button>' +
+      '<button class="btn btn-outline" style="color:var(--coral);border-color:rgba(255,90,53,.3)" onclick="clearAllRevs()">🗑 Clear All</button>' +
+    "</div></div>" +
+    '<div class="filter-tabs">' +
+      '<button class="ftab ' + (reviewFilter==="all"?"active":"") + '" onclick="loadReviews(\'all\')">All</button>' +
+      '<button class="ftab ' + (reviewFilter==="positive"?"active":"") + '" onclick="loadReviews(\'positive\')">✅ Positive</button>' +
+      '<button class="ftab neg ' + (reviewFilter==="negative"?"active":"") + '" onclick="loadReviews(\'negative\')">⚠️ Negative</button>' +
+    "</div>" +
+    '<div class="card">' + tableHTML + "</div>" +
+    '<div class="modal-bg" id="revModal" onclick="if(event.target===this)closeModal(\'revModal\')">' +
+      '<div class="modal" style="max-width:500px">' +
+        '<div class="modal-title" id="revModalTitle">Review Detail</div>' +
+        '<div id="revModalBody"></div>' +
+        '<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal(\'revModal\')">Close</button></div>' +
+      "</div></div>";
+}
+
+function openRevModal(id) {
+  var rv = allReviews.find(function(x){ return x._id === id; });
+  if (!rv) return;
+  var stars = "⭐".repeat(rv.rating) + "☆".repeat(5-rv.rating);
+  var date  = new Date(rv.timestamp).toLocaleString("en-IN",{dateStyle:"long",timeStyle:"short"});
+  document.getElementById("revModalTitle").textContent = "Review — " + (rv.businessName||rv.businessId);
+  var body = document.getElementById("revModalBody");
+  body.innerHTML =
+    '<div class="mf-lbl">Status</div><div class="mf-val">' + (rv.type==="positive"?"✅ Google pe bheja gaya":"⚠️ Sirf save hua — Google pe nahi gaya") + "</div>" +
+    '<div class="mf-lbl">Rating</div><div class="mf-val" style="font-size:22px;letter-spacing:2px">' + stars + "</div>" +
+    '<div class="mf-lbl">Review</div><div class="mf-val" style="white-space:pre-wrap;line-height:1.65">' + (rv.reviewText||"(No text)") + "</div>" +
+    '<div class="mf-lbl">Chips</div><div class="mf-val">' + ((rv.chips||[]).join(", ")||"None") + "</div>" +
+    '<div class="mf-lbl">Date</div><div class="mf-val">' + date + "</div>" +
+    '<div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap">' +
+      '<button class="btn btn-teal" id="copyRevBtn">📋 Copy</button>' +
+      '<button class="btn btn-outline" style="color:var(--coral)" onclick="deleteRev(\'' + rv._id + '\');closeModal(\'revModal\')">🗑 Delete</button>' +
+    "</div>";
+  document.getElementById("copyRevBtn").onclick = function() {
+    navigator.clipboard.writeText(rv.reviewText||"").then(function(){ toast("Copied!","teal","📋"); });
+  };
+  document.getElementById("revModal").classList.add("show");
+}
+
+async function deleteRev(id) {
+  if (!confirm("Delete this review?")) return;
+  try {
+    await fetch(API + "/reviews/" + id, { method: "DELETE" });
+    toast("Deleted","teal","🗑");
+    loadReviews(reviewFilter);
+  } catch(e) { toast("Failed","coral","✕"); }
+}
+
+async function clearAllRevs() {
+  if (!confirm("Saare reviews delete karna chahte ho?")) return;
+  try {
+    await fetch(API + "/reviews", { method: "DELETE" });
+    toast("All cleared","teal","✓");
+    loadReviews(reviewFilter);
+  } catch(e) { toast("Failed","coral","✕"); }
+}
+
+function downloadRevCSV(type) {
+  var data = type === "negative" ? allReviews.filter(function(r){ return r.type==="negative"; }) : allReviews;
+  if (!data.length) { toast("Koi review nahi","coral","✕"); return; }
+  var rows = data.map(function(r) {
+    return [r._id, '"'+(r.businessName||"").replace(/"/g,'""')+'"', r.rating, r.type,
+      '"'+(r.reviewText||"").replace(/"/g,'""')+'"',
+      '"'+(r.chips||[]).join(", ").replace(/"/g,'""')+'"',
+      r.sentToGoogle?"Yes":"No", new Date(r.timestamp).toLocaleString()].join(",");
+  });
+  var csv  = ["ID,Business,Rating,Type,Review,Chips,Google,Date"].concat(rows).join("\n");
+  var a    = document.createElement("a");
+  a.href   = URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
+  a.download = "zuit_" + type + "_" + new Date().toISOString().slice(0,10) + ".csv";
+  a.click();
+  toast(data.length + " reviews downloaded","teal","⬇");
+}
+
+/* ADD BUSINESS */
+function openAddModal() { document.getElementById("addModal").classList.add("show"); }
+function closeModal(id) { document.getElementById(id).classList.remove("show"); }
 
 async function addBusiness() {
-  const body = {
-    id:           document.getElementById('f-id').value.trim(),
-    name:         document.getElementById('f-name').value.trim(),
-    type:         document.getElementById('f-type').value,
-    description:  document.getElementById('f-desc').value.trim(),
-    imageUrl:     document.getElementById('f-img').value.trim(),
-    googlePlaceId:document.getElementById('f-place').value.trim(),
-    address:      document.getElementById('f-addr').value.trim(),
-    phone:        document.getElementById('f-phone').value.trim()
+  var body = {
+    id: document.getElementById("f-id").value.trim(),
+    name: document.getElementById("f-name").value.trim(),
+    type: document.getElementById("f-type").value,
+    description: document.getElementById("f-desc").value.trim(),
+    imageUrl: document.getElementById("f-img").value.trim(),
+    googlePlaceId: document.getElementById("f-place").value.trim(),
+    address: document.getElementById("f-addr").value.trim(),
+    phone: document.getElementById("f-phone").value.trim()
   };
-  if (!body.id || !body.name || !body.googlePlaceId) {
-    toast('ID, Name aur Google Place ID required hain','coral','✕'); return;
-  }
-  if (!/^[a-z0-9-]+$/.test(body.id)) {
-    toast('ID mein sirf lowercase letters aur hyphens','coral','✕'); return;
-  }
+  if (!body.id||!body.name||!body.googlePlaceId) { toast("ID, Name, Place ID required","coral","✕"); return; }
+  if (!/^[a-z0-9-]+$/.test(body.id)) { toast("ID mein sirf lowercase aur hyphens","coral","✕"); return; }
   try {
-    const r = await fetch(`${API}/business`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-    const d = await r.json();
-    if (!r.ok) { toast(d.error||'Add nahi hua','coral','✕'); return; }
-    toast(`"${body.name}" add ho gaya! 🎉`,'teal','✓');
+    var r = await fetch(API+"/business",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+    var d = await r.json();
+    if (!r.ok) { toast(d.error||"Failed","coral","✕"); return; }
+    toast('"'+body.name+'" add ho gaya! 🎉',"teal","✓");
     await loadBiz();
-    closeModal('addModal');
-    goto('businesses');
-  } catch { toast('Server se connect nahi hua','coral','✕'); }
+    closeModal("addModal");
+    goto("businesses");
+  } catch(e) { toast("Server connect nahi hua","coral","✕"); }
 }
 
-/* ═══ HELPER ═══ */
-function emptyState(title, sub, action) {
-  return `<div class="empty">
-    <div class="empty-icon">🏢</div>
-    <div class="empty-title">${title}</div>
-    <div class="empty-sub">${sub}</div>
-    ${action ? `<button class="btn btn-teal" onclick="${action}">➕ Add Business</button>` : ''}
-  </div>`;
+/* HELPER */
+function emptyHTML(title, sub, action) {
+  return '<div class="empty"><div class="empty-icon">🏢</div><div class="empty-title">'+title+'</div><div class="empty-sub">'+sub+'</div>' +
+    (action ? '<button class="btn btn-teal" onclick="'+action+'">➕ Add Business</button>' : '') + '</div>';
 }
 
-/* ═══ INIT ═══ */
+/* INIT */
 function initDashboard() {
-  loadBiz().then(() => renderHome());
+  loadBiz().then(function(){ goto("home"); });
 }
 
-/* ═══ BOOT ═══ */
-window.addEventListener('DOMContentLoaded', () => {
-  // Check if already logged in this session
-  if (sessionStorage.getItem(AUTH_KEY) === '1') {
-    document.getElementById('loginOverlay').style.display = 'none';
-    document.getElementById('appShell').style.display = 'flex';
+/* BOOT */
+window.addEventListener("DOMContentLoaded", function() {
+  if (sessionStorage.getItem(AUTH_KEY) === "1") {
+    document.getElementById("loginScreen").style.display = "none";
+    document.getElementById("appShell").style.display    = "block";
     initDashboard();
   } else {
-    // Show login, hide app
-    document.getElementById('loginOverlay').style.display = 'flex';
-    document.getElementById('appShell').style.display = 'none';
-    setTimeout(() => document.getElementById('adminPw')?.focus(), 100);
+    document.getElementById("adminPw").focus();
   }
 });
 </script>
-</div><!-- end appShell -->
 </body>
 </html>
