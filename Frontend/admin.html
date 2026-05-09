@@ -213,9 +213,80 @@ body{background:var(--bg);color:var(--white);font-family:var(--ff-body);
   .form-grid{grid-template-columns:1fr}
   .fg.full{grid-column:1}
 }
-  </style>
+  
+/* ── LOGIN OVERLAY ── */
+#loginOverlay{
+  position:fixed;inset:0;z-index:9999;background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  animation:none;
+}
+.login-box{
+  width:100%;max-width:400px;margin:20px;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:24px;padding:40px 36px;text-align:center;
+}
+.login-logo{
+  font-family:var(--ff-head);font-size:44px;font-weight:800;
+  background:linear-gradient(135deg,var(--teal),var(--coral));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  margin-bottom:6px;
+}
+.login-subtitle{font-size:13px;color:var(--muted);margin-bottom:30px;letter-spacing:.05em;}
+.login-label{display:block;text-align:left;font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;}
+.login-input{
+  width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);
+  border-radius:12px;color:var(--white);font-family:var(--ff-body);font-size:15px;
+  padding:13px 16px;outline:none;transition:border-color .2s;margin-bottom:18px;
+}
+.login-input:focus{border-color:rgba(0,229,204,.4);}
+.login-input::placeholder{color:var(--muted2);}
+.login-btn{
+  width:100%;padding:14px;border-radius:12px;border:none;
+  background:linear-gradient(135deg,var(--teal),#00BFAD);
+  color:#050510;font-family:var(--ff-body);font-size:15px;font-weight:700;
+  cursor:pointer;transition:all .2s;
+}
+.login-btn:hover{box-shadow:0 8px 24px rgba(0,229,204,.3);transform:translateY(-1px);}
+.login-err{
+  background:rgba(255,90,53,.1);border:1px solid rgba(255,90,53,.3);
+  border-radius:10px;padding:10px 14px;font-size:13px;color:#FF8260;
+  margin-top:14px;display:none;
+}
+/* ── REVIEWS TABLE ── */
+.rev-table{width:100%;border-collapse:separate;border-spacing:0 8px;}
+.rev-table th{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:0 14px 6px;text-align:left;}
+.rev-tr{background:var(--surface);border:1px solid var(--border);border-radius:var(--radi-sm);transition:all .2s;cursor:pointer;}
+.rev-tr:hover{border-color:rgba(0,229,204,.2);transform:translateY(-1px);}
+.rev-tr td{padding:14px;vertical-align:middle;}
+.rev-tr td:first-child{border-radius:var(--radi-sm) 0 0 var(--radi-sm);}
+.rev-tr td:last-child{border-radius:0 var(--radi-sm) var(--radi-sm) 0;}
+.rev-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:3px 10px;border-radius:100px;}
+.rev-badge.pos{background:rgba(0,229,204,.1);color:var(--teal);border:1px solid rgba(0,229,204,.2);}
+.rev-badge.neg{background:rgba(255,90,53,.1);color:var(--coral);border:1px solid rgba(255,90,53,.2);}
+.filter-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px;}
+.ftab{background:var(--surface);border:1px solid var(--border);color:var(--muted);font-family:var(--ff-body);font-size:12.5px;font-weight:500;padding:7px 14px;border-radius:100px;cursor:pointer;transition:all .2s;outline:none;}
+.ftab.active{background:rgba(0,229,204,.12);border-color:rgba(0,229,204,.4);color:var(--teal);}
+.ftab.coral.active{background:rgba(255,90,53,.12);border-color:rgba(255,90,53,.4);color:var(--coral);}
+/* Review detail modal */
+.mf-lbl{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+.mf-val{font-size:14px;color:var(--white);line-height:1.6;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:14px;}
+
+</style>
 </head>
 <body>
+
+<!-- ── LOGIN OVERLAY ── -->
+<div id="loginOverlay">
+  <div class="login-box">
+    <div class="login-logo">Zuit</div>
+    <div class="login-subtitle">Admin Dashboard · Secure Access</div>
+    <label class="login-label">Password</label>
+    <input type="password" class="login-input" id="adminPw" placeholder="Enter admin password" onkeydown="if(event.key==='Enter')doAdminLogin()"/>
+    <button class="login-btn" onclick="doAdminLogin()">🔐 Login</button>
+    <div class="login-err" id="loginErr">❌ Wrong password. Try again.</div>
+  </div>
+</div>
+
 <div class="mesh"><div class="orb o1"></div><div class="orb o2"></div></div>
 
 <!-- ── SIDEBAR ── -->
@@ -231,6 +302,7 @@ body{background:var(--bg);color:var(--white);font-family:var(--ff-body);
 
   <div class="s-section">Actions</div>
   <button class="nav-item" onclick="openAddModal()"><span class="ni">➕</span>Add Business</button>
+  <button class="nav-item" onclick="goto('reviews')"><span class="ni">📋</span>Reviews</button>
   <button class="nav-item" onclick="window.open('/','_blank')"><span class="ni">🌐</span>View Site</button>
 
   <div class="s-footer">
@@ -624,11 +696,229 @@ function emptyState(title, sub, action){
   </div>`;
 }
 
-/* ── BOOT ── */
-(async()=>{
-  await loadBiz();
-  renderHome();
-})();
+
+
+/* ═══════════════════════════════════════════════════
+   AUTH — Password Protection
+═══════════════════════════════════════════════════ */
+const ADMIN_PASSWORD = "zuit@admin2024"; // ← Change this!
+const AUTH_KEY = "zuit_admin_v1";
+
+function doAdminLogin() {
+  const pw = document.getElementById('adminPw').value;
+  if (pw === ADMIN_PASSWORD) {
+    sessionStorage.setItem(AUTH_KEY, '1');
+    document.getElementById('loginOverlay').style.display = 'none';
+    initDashboard();
+  } else {
+    document.getElementById('loginErr').style.display = 'block';
+    document.getElementById('adminPw').value = '';
+    document.getElementById('adminPw').focus();
+    setTimeout(() => document.getElementById('loginErr').style.display = 'none', 3000);
+  }
+}
+
+function checkAuth() {
+  if (sessionStorage.getItem(AUTH_KEY) === '1') {
+    document.getElementById('loginOverlay').style.display = 'none';
+    return true;
+  }
+  setTimeout(() => document.getElementById('adminPw')?.focus(), 200);
+  return false;
+}
+
+// Add logout button to sidebar footer
+function addLogout() {
+  const footer = document.querySelector('.s-footer');
+  if (footer) {
+    const btn = document.createElement('button');
+    btn.className = 'btn btn-outline';
+    btn.style.cssText = 'width:100%;margin-top:10px;justify-content:center;font-size:12px;';
+    btn.textContent = '🚪 Logout';
+    btn.onclick = () => { sessionStorage.removeItem(AUTH_KEY); location.reload(); };
+    footer.appendChild(btn);
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   REVIEWS — Fetch from MongoDB via API
+═══════════════════════════════════════════════════ */
+let allReviewsData = [];
+let reviewFilter = 'all';
+
+async function loadReviews(filter = 'all') {
+  reviewFilter = filter;
+  const el = document.getElementById('mainContent');
+  let url = `${API}/reviews`;
+  if (filter === 'positive') url += '?type=positive';
+  else if (filter === 'negative') url += '?type=negative';
+
+  el.innerHTML = `<div class="page-header"><div class="page-title">Reviews 📋</div><div class="page-sub">Loading…</div></div><div class="card"><div class="skel" style="height:300px"></div></div>`;
+
+  try {
+    const r = await fetch(url);
+    const d = await r.json();
+    allReviewsData = d.reviews || [];
+    renderReviewsPage(d.stats || {});
+  } catch {
+    el.innerHTML = `<div class="page-header"><div class="page-title">Reviews 📋</div></div><div class="card"><div style="text-align:center;padding:40px;color:var(--muted)">Cannot connect to backend. Check your server.</div></div>`;
+  }
+}
+
+function renderReviewsPage(stats) {
+  const el = document.getElementById('mainContent');
+  const revs = allReviewsData;
+
+  const rows = revs.length === 0
+    ? `<div class="empty"><div class="empty-icon">${reviewFilter === 'negative' ? '✅' : '📭'}</div><div class="empty-title">${reviewFilter === 'negative' ? 'No negative reviews!' : 'No reviews yet'}</div><div class="empty-sub">Reviews will appear here after customers submit them.</div></div>`
+    : `<table class="rev-table">
+        <thead><tr>
+          <th>Type</th><th>Rating</th><th>Review</th><th>Business</th><th>Date</th><th></th>
+        </tr></thead>
+        <tbody>${revs.map((r, i) => {
+          const stars = '⭐'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
+          const date = new Date(r.timestamp).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+          const badge = r.type === 'positive'
+            ? '<span class="rev-badge pos">✅ Google</span>'
+            : '<span class="rev-badge neg">⚠️ Saved</span>';
+          const preview = (r.reviewText || '').slice(0, 60) + ((r.reviewText || '').length > 60 ? '…' : '');
+          return `<tr class="rev-tr" onclick="openRevModal('${r._id}')">
+            <td>${badge}</td>
+            <td style="font-size:14px;letter-spacing:1px">${stars}</td>
+            <td style="font-size:13px;color:var(--muted);max-width:260px">${preview || '—'}</td>
+            <td style="font-size:13px">${r.businessName || r.businessId}</td>
+            <td style="font-size:12px;color:var(--muted2)">${date}</td>
+            <td><button onclick="event.stopPropagation();deleteRev('${r._id}')" style="background:none;border:1px solid rgba(255,90,53,.2);color:var(--coral);font-size:12px;padding:5px 10px;border-radius:100px;cursor:pointer;">Delete</button></td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>`;
+
+  el.innerHTML = `
+    <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px">
+      <div>
+        <div class="page-title">Reviews 📋</div>
+        <div class="page-sub">${stats.total || 0} total · ${stats.positive || 0} positive · ${stats.negative || 0} negative · ⭐ ${stats.avgRating || '—'} avg</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-teal" onclick="downloadRevCSV('all')">⬇ Download All</button>
+        <button class="btn btn-outline" onclick="downloadRevCSV('negative')">⬇ Negative Only</button>
+        <button class="btn btn-outline" style="color:var(--coral);border-color:rgba(255,90,53,.3)" onclick="clearAllRevs()">🗑 Clear All</button>
+      </div>
+    </div>
+
+    <div class="filter-tabs">
+      <button class="ftab ${reviewFilter==='all'?'active':''}" onclick="loadReviews('all')">All Reviews</button>
+      <button class="ftab ${reviewFilter==='positive'?'active':''}" onclick="loadReviews('positive')">✅ Positive</button>
+      <button class="ftab coral ${reviewFilter==='negative'?'active':''}" onclick="loadReviews('negative')">⚠️ Negative</button>
+    </div>
+
+    <div class="card">${rows}</div>
+
+    <!-- Review detail modal -->
+    <div class="modal-bg" id="revModal" onclick="if(event.target===this)closeModal('revModal')">
+      <div class="modal" style="max-width:500px">
+        <div class="modal-title" id="revModalTitle">Review Detail</div>
+        <div id="revModalBody"></div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="closeModal('revModal')">Close</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function openRevModal(id) {
+  const r = allReviewsData.find(x => x._id === id);
+  if (!r) return;
+  const stars = '⭐'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
+  const date = new Date(r.timestamp).toLocaleString('en-IN', { dateStyle: 'long', timeStyle: 'short' });
+  document.getElementById('revModalTitle').textContent = `Review — ${r.businessName || r.businessId}`;
+  document.getElementById('revModalBody').innerHTML = `
+    <div class="mf-lbl">Status</div>
+    <div class="mf-val">${r.type === 'positive' ? '✅ Sent to Google' : '⚠️ Saved locally — NOT sent to Google'}</div>
+    <div class="mf-lbl">Rating</div>
+    <div class="mf-val" style="font-size:22px;letter-spacing:2px">${stars}</div>
+    <div class="mf-lbl">Review Text</div>
+    <div class="mf-val" style="white-space:pre-wrap">${r.reviewText || '(No text)'}</div>
+    <div class="mf-lbl">Chips Selected</div>
+    <div class="mf-val">${(r.chips || []).join(', ') || 'None'}</div>
+    <div class="mf-lbl">Date</div>
+    <div class="mf-val">${date}</div>
+    <div style="display:flex;gap:10px;margin-top:4px;flex-wrap:wrap">
+      <button class="btn btn-teal" onclick="navigator.clipboard.writeText(${JSON.stringify(r.reviewText || '')}).then(()=>toast('Copied!','teal','📋'))">📋 Copy Review</button>
+      <button class="btn btn-outline" style="color:var(--coral)" onclick="deleteRev('${r._id}');closeModal('revModal')">🗑 Delete</button>
+    </div>`;
+  document.getElementById('revModal').classList.add('show');
+}
+
+async function deleteRev(id) {
+  if (!confirm('Delete this review?')) return;
+  try {
+    await fetch(`${API}/reviews/${id}`, { method: 'DELETE' });
+    toast('Review deleted', 'teal', '🗑');
+    await loadReviews(reviewFilter);
+  } catch {
+    toast('Delete failed', 'coral', '✕');
+  }
+}
+
+async function clearAllRevs() {
+  if (!confirm('Delete ALL reviews from MongoDB? This cannot be undone.')) return;
+  try {
+    await fetch(`${API}/reviews`, { method: 'DELETE' });
+    toast('All reviews cleared', 'teal', '✓');
+    await loadReviews(reviewFilter);
+  } catch {
+    toast('Failed', 'coral', '✕');
+  }
+}
+
+function downloadRevCSV(type) {
+  const data = type === 'negative' ? allReviewsData.filter(r => r.type === 'negative') : allReviewsData;
+  if (!data.length) { toast('No reviews to download', 'coral', '✕'); return; }
+  const headers = ['ID', 'Business', 'Rating', 'Type', 'Review', 'Chips', 'Sent to Google', 'Date'];
+  const rows = data.map(r => [
+    r._id,
+    '"' + (r.businessName || r.businessId || '').replace(/"/g, '""') + '"',
+    r.rating,
+    r.type,
+    '"' + (r.reviewText || '').replace(/"/g, '""') + '"',
+    '"' + (r.chips || []).join(', ').replace(/"/g, '""') + '"',
+    r.sentToGoogle ? 'Yes' : 'No',
+    new Date(r.timestamp).toLocaleString('en-IN')
+  ]);
+  const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `zuit_${type}_reviews_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast(`Downloaded ${data.length} reviews`, 'teal', '⬇');
+}
+
+/* Override goto to handle reviews tab */
+const _origGoto = goto;
+const goto = function(tab) {
+  document.querySelectorAll('.nav-item').forEach((el, i) => {
+    const map = ['home','businesses','qrcodes','analytics','reviews','add','site'];
+    el.classList.toggle('active', map[i] === tab);
+  });
+  if (tab === 'reviews') { loadReviews('all'); return; }
+  render(tab);
+};
+
+function initDashboard() {
+  addLogout();
+  loadBiz().then(() => renderHome());
+}
+
+// Boot
+window.addEventListener('DOMContentLoaded', () => {
+  if (!checkAuth()) return; // show login
+  initDashboard();
+});
+
 </script>
 </body>
 </html>
