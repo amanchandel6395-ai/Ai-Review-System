@@ -112,4 +112,21 @@ const SEED_BUSINESSES = [
   }
 ];
 
-module.exports = { Business, Analytics, SEED_BUSINESSES };
+// (export moved below)
+
+// ── Review Schema (negative + positive both saved to MongoDB) ─────────────────
+const ReviewSchema = new mongoose.Schema({
+  businessId:   { type: String, ref: 'Business', required: true },
+  businessName: { type: String, default: '' },
+  rating:       { type: Number, required: true },
+  reviewText:   { type: String, default: '' },
+  chips:        { type: [String], default: [] },
+  type:         { type: String, enum: ['positive', 'negative'], required: true },
+  sentToGoogle: { type: Boolean, default: false },
+  userAgent:    { type: String, default: '' },
+  timestamp:    { type: Date, default: Date.now }
+});
+
+const Review = mongoose.model('Review', ReviewSchema);
+
+module.exports = { Business, Analytics, Review, SEED_BUSINESSES };
