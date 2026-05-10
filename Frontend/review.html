@@ -6,226 +6,125 @@
   <title>Zuit — Share Your Experience</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
-
   <style>
-/* ═══════════════════════════════════════════════════════
-   RESET & TOKENS
-═══════════════════════════════════════════════════════ */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:        #070712;
-  --bg2:       #0C0C1E;
-  --surface:   rgba(255,255,255,0.04);
-  --surface2:  rgba(255,255,255,0.07);
-  --border:    rgba(255,255,255,0.08);
-  --teal:      #00E5CC;
-  --teal2:     #00BFAD;
-  --coral:     #FF5A35;
-  --coral2:    #FF8260;
-  --white:     #F0F4FF;
-  --muted:     rgba(200,210,240,0.45);
-  --muted2:    rgba(200,210,240,0.22);
-  --radius:    22px;
-  --radi-sm:   14px;
-  --radi-xs:   10px;
-  --ff-head:   'Syne',sans-serif;
-  --ff-body:   'Outfit',sans-serif;
+  --bg:#070712;--bg2:#0C0C1E;
+  --surface:rgba(255,255,255,0.04);--surface2:rgba(255,255,255,0.07);
+  --border:rgba(255,255,255,0.08);
+  --teal:#00E5CC;--teal2:#00BFAD;--coral:#FF5A35;--coral2:#FF8260;
+  --white:#F0F4FF;--muted:rgba(200,210,240,0.45);--muted2:rgba(200,210,240,0.22);
+  --radius:22px;--radi-sm:14px;--radi-xs:10px;
+  --ff-head:'Syne',sans-serif;--ff-body:'Outfit',sans-serif;
 }
 html{scroll-behavior:smooth}
-body{
-  background:var(--bg);
-  color:var(--white);
-  font-family:var(--ff-body);
-  min-height:100vh;
-  overflow-x:hidden;
-  -webkit-font-smoothing:antialiased;
-}
+body{background:var(--bg);color:var(--white);font-family:var(--ff-body);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
 
-/* MESH BACKGROUND */
 .mesh{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
 .orb{position:absolute;border-radius:50%;filter:blur(80px);animation:drift 18s ease-in-out infinite alternate}
 .orb-1{width:500px;height:500px;background:rgba(0,229,204,0.07);top:-100px;left:-100px;animation-duration:20s}
 .orb-2{width:400px;height:400px;background:rgba(255,90,53,0.06);bottom:-80px;right:-80px;animation-duration:15s;animation-delay:-7s}
 .orb-3{width:300px;height:300px;background:rgba(0,180,255,0.05);top:40%;left:40%;animation-duration:25s;animation-delay:-12s}
-@keyframes drift{
-  0%{transform:translate(0,0) scale(1)}
-  50%{transform:translate(40px,-30px) scale(1.08)}
-  100%{transform:translate(-20px,50px) scale(0.95)}
-}
+@keyframes drift{0%{transform:translate(0,0) scale(1)}50%{transform:translate(40px,-30px) scale(1.08)}100%{transform:translate(-20px,50px) scale(0.95)}}
 
 /* SPLASH */
-#splash{
-  position:fixed;inset:0;z-index:1000;background:var(--bg);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
-  animation:splashOut 0.6s 2.2s cubic-bezier(.76,0,.24,1) forwards;
-}
+#splash{position:fixed;inset:0;z-index:1000;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;animation:splashOut 0.6s 2.2s cubic-bezier(.76,0,.24,1) forwards}
 @keyframes splashOut{0%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.04);pointer-events:none;visibility:hidden}}
-.splash-logo{
-  font-family:var(--ff-head);font-size:52px;font-weight:800;letter-spacing:-1px;
-  background:linear-gradient(135deg,var(--teal),var(--coral));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-  animation:logoIn 0.8s cubic-bezier(.34,1.56,.64,1) both;
-}
+.splash-logo{font-family:var(--ff-head);font-size:52px;font-weight:800;letter-spacing:-1px;background:linear-gradient(135deg,var(--teal),var(--coral));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:logoIn 0.8s cubic-bezier(.34,1.56,.64,1) both}
 @keyframes logoIn{from{opacity:0;transform:scale(0.6) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
 .splash-tagline{font-size:14px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;animation:fadeUp 0.6s 0.5s ease both}
-.splash-ring{
-  width:64px;height:64px;border-radius:50%;border:2px solid transparent;
-  border-top-color:var(--teal);border-right-color:var(--coral);
-  animation:spin 0.9s 0.3s linear both;position:absolute;bottom:80px;
-}
+.splash-ring{width:64px;height:64px;border-radius:50%;border:2px solid transparent;border-top-color:var(--teal);border-right-color:var(--coral);animation:spin 0.9s 0.3s linear both;position:absolute;bottom:80px}
 @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
 
-/* APP */
-#app{
-  max-width:460px;margin:0 auto;min-height:100vh;
-  position:relative;z-index:1;opacity:0;animation:appIn 0.8s 2.5s ease forwards;
-}
+#app{max-width:460px;margin:0 auto;min-height:100vh;position:relative;z-index:1;opacity:0;animation:appIn 0.8s 2.5s ease forwards}
 @keyframes appIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 
-/* SKELETON */
-.skel{
-  background:linear-gradient(90deg,var(--bg2) 25%,rgba(255,255,255,0.06) 50%,var(--bg2) 75%);
-  background-size:200% 100%;animation:shimmer 1.6s infinite;border-radius:var(--radi-sm);
-}
+.skel{background:linear-gradient(90deg,var(--bg2) 25%,rgba(255,255,255,0.06) 50%,var(--bg2) 75%);background-size:200% 100%;animation:shimmer 1.6s infinite;border-radius:var(--radi-sm)}
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
 /* HERO */
 .hero{position:relative;height:280px;overflow:hidden}
 .hero-img{width:100%;height:100%;object-fit:cover;object-position:center;transform:scale(1.08);transition:transform 6s ease}
 .hero-img.loaded{transform:scale(1)}
-.hero-vignette{
-  position:absolute;inset:0;
-  background:linear-gradient(180deg,rgba(7,7,18,0.15) 0%,rgba(7,7,18,0.4) 45%,rgba(7,7,18,0.93) 82%,var(--bg) 100%);
-}
+.hero-vignette{position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,7,18,0.15) 0%,rgba(7,7,18,0.4) 45%,rgba(7,7,18,0.93) 82%,var(--bg) 100%)}
 .hero-body{position:absolute;bottom:0;left:0;right:0;padding:0 20px 24px}
-.zuit-pill{
-  display:inline-flex;align-items:center;gap:7px;
-  background:rgba(0,229,204,0.1);border:1px solid rgba(0,229,204,0.25);
-  color:var(--teal);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
-  padding:5px 13px;border-radius:100px;margin-bottom:10px;backdrop-filter:blur(10px);
-  animation:fadeUp .5s .3s ease both;
-}
+.zuit-pill{display:inline-flex;align-items:center;gap:7px;background:rgba(0,229,204,0.1);border:1px solid rgba(0,229,204,0.25);color:var(--teal);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:5px 13px;border-radius:100px;margin-bottom:10px;backdrop-filter:blur(10px);animation:fadeUp .5s .3s ease both}
 .zuit-pill::before{content:'';width:6px;height:6px;background:var(--teal);border-radius:50%;box-shadow:0 0 8px var(--teal);animation:blink 2s infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
-.hero-name{
-  font-family:var(--ff-head);font-size:clamp(24px,7vw,32px);font-weight:800;
-  color:#fff;line-height:1.1;letter-spacing:-.5px;animation:fadeUp .5s .45s ease both;
-}
+.hero-name{font-family:var(--ff-head);font-size:clamp(24px,7vw,32px);font-weight:800;color:#fff;line-height:1.1;letter-spacing:-.5px;animation:fadeUp .5s .45s ease both}
 .hero-desc{font-size:13px;color:var(--muted);margin-top:5px;line-height:1.5;animation:fadeUp .5s .6s ease both}
 .hero-skel{height:280px;border-radius:0}
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 
 /* ABOUT */
-.zuit-about{
-  margin:0 16px;margin-top:-2px;
-  background:linear-gradient(135deg,rgba(0,229,204,0.07),rgba(255,90,53,0.07));
-  border:1px solid rgba(0,229,204,0.15);border-radius:var(--radi-sm);padding:14px 16px;
-  display:flex;align-items:center;gap:14px;
-  animation:fadeUp .5s .75s ease both;opacity:0;animation-fill-mode:both;
-}
-.zuit-icon{
-  width:42px;height:42px;border-radius:12px;flex-shrink:0;
-  background:linear-gradient(135deg,var(--teal),var(--coral));
-  display:flex;align-items:center;justify-content:center;
-  font-family:var(--ff-head);font-size:17px;font-weight:800;color:#050510;
-}
+.zuit-about{margin:0 16px;margin-top:-2px;background:linear-gradient(135deg,rgba(0,229,204,0.07),rgba(255,90,53,0.07));border:1px solid rgba(0,229,204,0.15);border-radius:var(--radi-sm);padding:14px 16px;display:flex;align-items:center;gap:14px;animation:fadeUp .5s .75s ease both;opacity:0;animation-fill-mode:both}
+.zuit-icon{width:42px;height:42px;border-radius:12px;flex-shrink:0;background:linear-gradient(135deg,var(--teal),var(--coral));display:flex;align-items:center;justify-content:center;font-family:var(--ff-head);font-size:17px;font-weight:800;color:#050510}
 .zuit-about-title{font-family:var(--ff-head);font-size:14px;font-weight:700;color:#fff}
 .zuit-about-sub{font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.45}
 
 /* CARDS */
 .cards{padding:14px 16px 40px;display:flex;flex-direction:column;gap:14px}
-.card{
-  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
-  padding:22px;backdrop-filter:blur(16px);
-  opacity:0;transform:translateY(22px);
-  transition:opacity .5s ease,transform .5s ease,border-color .3s ease;
-}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;backdrop-filter:blur(16px);opacity:0;transform:translateY(22px);transition:opacity .5s ease,transform .5s ease,border-color .3s ease}
 .card.in{opacity:1;transform:translateY(0)}
 .card:hover{border-color:rgba(0,229,204,0.15)}
-.card-label{
-  font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
-  color:var(--teal);margin-bottom:18px;display:flex;align-items:center;gap:8px;
-}
+.card-label{font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);margin-bottom:18px;display:flex;align-items:center;gap:8px}
 .card-label::after{content:'';flex:1;height:1px;background:linear-gradient(to right,rgba(0,229,204,0.25),transparent)}
 
 /* STARS */
 .stars-wrap{display:flex;justify-content:center;gap:6px;padding:4px 0 2px}
-.star-btn{
-  background:none;border:none;cursor:pointer;padding:6px;border-radius:50%;outline:none;
-  -webkit-tap-highlight-color:transparent;position:relative;
-  transition:transform .2s cubic-bezier(.34,1.56,.64,1);
-}
+.star-btn{background:none;border:none;cursor:pointer;padding:6px;border-radius:50%;outline:none;-webkit-tap-highlight-color:transparent;position:relative;transition:transform .2s cubic-bezier(.34,1.56,.64,1)}
 .star-btn:active{transform:scale(.82)!important}
-.star-svg{width:48px;height:48px;display:block;transition:all .25s cubic-bezier(.34,1.56,.64,1);filter:drop-shadow(0 0 0 transparent)}
+.star-svg{width:48px;height:48px;display:block;transition:all .25s cubic-bezier(.34,1.56,.64,1)}
 .star-svg path{transition:fill .2s ease}
 .star-btn.lit .star-svg{transform:scale(1.18)}
 .star-btn.lit .star-svg path{fill:var(--teal);filter:drop-shadow(0 0 10px rgba(0,229,204,.7))}
 .star-btn:not(.lit) .star-svg path{fill:rgba(255,255,255,.1)}
-
-.rating-mood{
-  text-align:center;margin-top:14px;min-height:24px;
-  font-family:var(--ff-head);font-size:16px;font-weight:600;
-  background:linear-gradient(135deg,var(--teal),var(--coral));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-  transition:all .3s ease;
-}
+.rating-mood{text-align:center;margin-top:14px;min-height:24px;font-family:var(--ff-head);font-size:16px;font-weight:600;background:linear-gradient(135deg,var(--teal),var(--coral));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;transition:all .3s ease}
 
 #particleCanvas{position:fixed;inset:0;pointer-events:none;z-index:500}
 
+/* ── PLATFORM SELECTOR ────────────────────────────────── */
+.platform-label{font-size:12px;color:var(--muted);margin-bottom:10px;font-weight:500}
+.platforms-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.plat-btn{
+  display:flex;flex-direction:column;align-items:center;gap:5px;
+  padding:10px 6px;border-radius:var(--radi-xs);border:1.5px solid var(--border);
+  background:var(--surface2);cursor:pointer;transition:all .2s ease;
+  outline:none;-webkit-tap-highlight-color:transparent;
+}
+.plat-btn:hover{border-color:rgba(0,229,204,.3);background:rgba(0,229,204,.06)}
+.plat-btn.selected{border-color:var(--teal);background:rgba(0,229,204,.1)}
+.plat-icon{font-size:22px;line-height:1}
+.plat-name{font-size:10.5px;font-weight:600;color:var(--muted);letter-spacing:.02em}
+.plat-btn.selected .plat-name{color:var(--teal)}
+
+/* WORD COUNT BAR */
+.word-bar-wrap{margin-top:8px}
+.word-bar-track{height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;margin-bottom:4px}
+.word-bar-fill{height:100%;border-radius:2px;background:linear-gradient(to right,var(--teal),var(--coral));transition:width .3s ease}
+.word-bar-fill.warn{background:var(--coral)}
+.word-count-txt{font-size:11px;color:var(--muted);text-align:right}
+.word-count-txt.warn{color:var(--coral)}
+
 /* MODE TABS */
-.mode-tabs{
-  display:flex;gap:4px;background:rgba(255,255,255,.04);
-  border:1px solid var(--border);border-radius:var(--radi-xs);padding:4px;margin-bottom:16px;
-}
-.mode-tab{
-  flex:1;padding:9px;border-radius:7px;border:none;background:none;
-  font-family:var(--ff-body);font-size:13px;font-weight:500;
-  color:var(--muted);cursor:pointer;transition:all .2s ease;outline:none;
-}
-.mode-tab.active{
-  background:linear-gradient(135deg,rgba(0,229,204,.15),rgba(255,90,53,.1));
-  color:var(--white);border:1px solid rgba(0,229,204,.2);
-}
-.direct-textarea{
-  width:100%;background:rgba(255,255,255,.04);
-  border:1px solid var(--border);border-radius:var(--radi-sm);
-  color:var(--white);font-family:var(--ff-body);font-size:14px;line-height:1.6;
-  padding:14px;resize:none;min-height:120px;outline:none;transition:border-color .3s ease;
-}
+.mode-tabs{display:flex;gap:4px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:var(--radi-xs);padding:4px;margin-bottom:16px}
+.mode-tab{flex:1;padding:9px;border-radius:7px;border:none;background:none;font-family:var(--ff-body);font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;transition:all .2s ease;outline:none}
+.mode-tab.active{background:linear-gradient(135deg,rgba(0,229,204,.15),rgba(255,90,53,.1));color:var(--white);border:1px solid rgba(0,229,204,.2)}
+.direct-textarea{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:var(--radi-sm);color:var(--white);font-family:var(--ff-body);font-size:14px;line-height:1.6;padding:14px;resize:none;min-height:100px;outline:none;transition:border-color .3s ease}
 .direct-textarea:focus{border-color:rgba(0,229,204,.35)}
 .direct-textarea::placeholder{color:var(--muted2)}
 
 /* AI REVIEW */
 .ai-header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
-.ai-badge{
-  display:flex;align-items:center;gap:6px;
-  background:linear-gradient(135deg,rgba(0,229,204,.1),rgba(255,90,53,.08));
-  border:1px solid rgba(0,229,204,.2);
-  color:var(--teal);font-size:11px;font-weight:600;letter-spacing:.08em;
-  padding:4px 11px;border-radius:100px;text-transform:uppercase;
-}
+.ai-badge{display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,rgba(0,229,204,.1),rgba(255,90,53,.08));border:1px solid rgba(0,229,204,.2);color:var(--teal);font-size:11px;font-weight:600;letter-spacing:.08em;padding:4px 11px;border-radius:100px;text-transform:uppercase}
 .ai-badge svg{animation:spin2 3s linear infinite}
 @keyframes spin2{from{transform:rotate(0)}to{transform:rotate(360deg)}}
-
-.review-box{
-  width:100%;background:rgba(255,255,255,.04);
-  border:1px solid rgba(0,229,204,.2);border-radius:var(--radi-sm);
-  color:var(--white);font-family:var(--ff-body);font-size:14px;line-height:1.65;
-  padding:16px;resize:vertical;min-height:120px;outline:none;transition:border-color .3s ease;
-}
+.review-box{width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(0,229,204,.2);border-radius:var(--radi-sm);color:var(--white);font-family:var(--ff-body);font-size:14px;line-height:1.65;padding:16px;resize:none;min-height:110px;outline:none;transition:border-color .3s ease}
 .review-box:focus{border-color:rgba(0,229,204,.4)}
 .review-box::placeholder{color:var(--muted2)}
-
-.review-footer{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
-.char-ct{font-size:11.5px;color:var(--muted)}
-.regen-btn{
-  display:flex;align-items:center;gap:5px;
-  background:none;border:1px solid var(--border);color:var(--muted);
-  font-family:var(--ff-body);font-size:12px;padding:5px 12px;
-  border-radius:100px;cursor:pointer;transition:all .2s ease;outline:none;
-}
+.review-footer{display:flex;align-items:center;justify-content:space-between;margin-top:6px}
+.regen-btn{display:flex;align-items:center;gap:5px;background:none;border:1px solid var(--border);color:var(--muted);font-family:var(--ff-body);font-size:12px;padding:5px 12px;border-radius:100px;cursor:pointer;transition:all .2s ease;outline:none}
 .regen-btn:hover{border-color:rgba(0,229,204,.3);color:var(--teal)}
-
 .dots-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:28px}
 .dots{display:flex;gap:7px}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--teal);animation:dotBounce 1.2s infinite}
@@ -235,13 +134,7 @@ body{
 .dots-label{font-size:13px;color:var(--muted);font-weight:500}
 
 /* BUTTONS */
-.btn-main{
-  display:flex;align-items:center;justify-content:center;gap:10px;
-  width:100%;padding:16px 24px;border-radius:var(--radi-sm);border:none;
-  font-family:var(--ff-body);font-size:15px;font-weight:600;
-  cursor:pointer;transition:all .3s ease;outline:none;
-  -webkit-tap-highlight-color:transparent;position:relative;overflow:hidden;
-}
+.btn-main{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:16px 24px;border-radius:var(--radi-sm);border:none;font-family:var(--ff-body);font-size:15px;font-weight:600;cursor:pointer;transition:all .3s ease;outline:none;-webkit-tap-highlight-color:transparent;position:relative;overflow:hidden}
 .btn-main::after{content:'';position:absolute;inset:0;background:rgba(255,255,255,0);transition:background .2s}
 .btn-main:active::after{background:rgba(255,255,255,.12)}
 .btn-teal{background:linear-gradient(135deg,var(--teal),var(--teal2));color:#050510}
@@ -254,51 +147,32 @@ body{
 .btn-ghost:hover{border-color:rgba(255,255,255,.18);color:var(--white)}
 .btn-main:disabled{opacity:.35;cursor:not-allowed;transform:none!important}
 
+/* PLATFORM BADGE ON BUTTON */
+.plat-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);padding:3px 10px;border-radius:100px;font-size:12px;margin-left:4px}
+
 /* TOAST */
-#toast{
-  position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);
-  background:rgba(12,12,30,.95);border:1px solid var(--border);
-  color:var(--white);font-family:var(--ff-body);font-size:13.5px;font-weight:500;
-  padding:13px 22px;border-radius:100px;display:flex;align-items:center;gap:9px;
-  z-index:600;opacity:0;white-space:nowrap;
-  transition:all .45s cubic-bezier(.34,1.56,.64,1);
-  box-shadow:0 12px 40px rgba(0,0,0,.5);backdrop-filter:blur(16px);
-}
+#toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);background:rgba(12,12,30,.95);border:1px solid var(--border);color:var(--white);font-family:var(--ff-body);font-size:13.5px;font-weight:500;padding:13px 22px;border-radius:100px;display:flex;align-items:center;gap:9px;z-index:600;opacity:0;white-space:nowrap;transition:all .45s cubic-bezier(.34,1.56,.64,1);box-shadow:0 12px 40px rgba(0,0,0,.5);backdrop-filter:blur(16px)}
 #toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 #toast.teal{border-color:rgba(0,229,204,.3)}
 #toast.coral{border-color:rgba(255,90,53,.3)}
 
-/* PROGRESS */
 #bar{position:fixed;top:0;left:0;height:2.5px;background:linear-gradient(90deg,var(--teal),var(--coral));box-shadow:0 0 10px var(--teal);z-index:800;transition:width .4s ease;border-radius:0 2px 2px 0}
 
 .powered{text-align:center;font-size:11px;color:var(--muted2);padding:4px 0 28px;letter-spacing:.06em}
-.powered span{
-  background:linear-gradient(135deg,var(--teal),var(--coral));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:600;
-}
+.powered span{background:linear-gradient(135deg,var(--teal),var(--coral));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:600}
 
-/* ERROR */
 .err-state{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:80vh;text-align:center;gap:14px;padding:40px 24px}
 .err-icon{font-size:48px}
 .err-title{font-family:var(--ff-head);font-size:24px;font-weight:700;color:var(--white)}
 .err-sub{font-size:14px;color:var(--muted)}
 
-/* AUTO BANNER */
-.auto-banner{
-  display:flex;align-items:center;gap:10px;
-  background:linear-gradient(135deg,rgba(0,229,204,.12),rgba(0,229,204,.05));
-  border:1px solid rgba(0,229,204,.3);border-radius:var(--radi-sm);
-  padding:11px 16px;margin-bottom:16px;font-size:13px;color:var(--teal);font-weight:500;
-}
-.neg-notice{
-  text-align:center;padding:28px 20px;
-  background:linear-gradient(135deg,rgba(255,90,53,.08),rgba(255,90,53,.03));
-  border:1px solid rgba(255,90,53,.2);border-radius:var(--radi-sm);
-}
+.auto-banner{display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,rgba(0,229,204,.12),rgba(0,229,204,.05));border:1px solid rgba(0,229,204,.3);border-radius:var(--radi-sm);padding:11px 16px;margin-bottom:16px;font-size:13px;color:var(--teal);font-weight:500}
+
+.neg-notice{text-align:center;padding:28px 20px;background:linear-gradient(135deg,rgba(255,90,53,.08),rgba(255,90,53,.03));border:1px solid rgba(255,90,53,.2);border-radius:var(--radi-sm)}
 .neg-notice .n-icon{font-size:40px;margin-bottom:12px}
 .neg-notice .n-title{font-family:var(--ff-head);font-size:18px;font-weight:700;color:var(--white);margin-bottom:8px}
 .neg-notice .n-sub{font-size:13px;color:var(--muted);line-height:1.6}
-</style>
+  </style>
 </head>
 <body>
 
@@ -331,177 +205,325 @@ body{
 </div>
 
 <script>
-const API = "https://ai-review-system-1.onrender.com/api";
+// ── CONFIG ───────────────────────────────────────────────────────────────────
+const API = window.API_BASE || (
+  location.hostname === 'localhost' ? 'http://localhost:3001/api' : '/api'
+);
 
-const MOODS={1:'Really Bad 😞',2:'Not Great 😕',3:'It Was Okay 😐',4:'Pretty Good 😊',5:'Absolutely Loved It! 🔥'};
-const ICONS={restaurant:'🍽️',hotel:'🏨',salon:'💇',bar:'🍸',hospital:'🏥',cafe:'☕',gym:'💪',spa:'🧖',retail:'🛍️',other:'⭐'};
+// ── WORD LIMIT ───────────────────────────────────────────────────────────────
+const MAX_WORDS = 60; // AI review max word count
 
-const DEMOS={
+// ── PLATFORMS CONFIG ─────────────────────────────────────────────────────────
+// Each platform has: id, name, icon, color, urlBuilder function
+const PLATFORMS = {
+  google: {
+    id: 'google',
+    name: 'Google',
+    icon: '🌐',
+    color: '#4285F4',
+    // requires business.googlePlaceId
+    urlBuilder: (biz) =>
+      `https://search.google.com/local/writereview?placeid=${biz.googlePlaceId}`
+  },
+  oyo: {
+    id: 'oyo',
+    name: 'OYO',
+    icon: '🏠',
+    color: '#EE2E24',
+    // requires business.platforms.oyo = oyoHotelId (e.g. "73070")
+    urlBuilder: (biz) =>
+      biz.platforms?.oyo
+        ? `https://www.oyorooms.com/hotels/${biz.platforms.oyo}#reviews`
+        : null
+  },
+  makemytrip: {
+    id: 'makemytrip',
+    name: 'MakeMyTrip',
+    icon: '✈️',
+    color: '#E64C2E',
+    // requires business.platforms.makemytrip = MMT hotel ID
+    urlBuilder: (biz) =>
+      biz.platforms?.makemytrip
+        ? `https://www.makemytrip.com/hotels/hotel-details/?hotelId=${biz.platforms.makemytrip}`
+        : null
+  },
+  fabhotel: {
+    id: 'fabhotel',
+    name: 'FabHotel',
+    icon: '🏨',
+    color: '#FF6B35',
+    urlBuilder: (biz) =>
+      biz.platforms?.fabhotel
+        ? `https://www.fabhotels.com/hotels/${biz.platforms.fabhotel}`
+        : null
+  },
+  tripadvisor: {
+    id: 'tripadvisor',
+    name: 'TripAdvisor',
+    icon: '🦉',
+    color: '#34E0A1',
+    // requires business.platforms.tripadvisor = "Hotel_Review-g12345-d789..."
+    urlBuilder: (biz) =>
+      biz.platforms?.tripadvisor
+        ? `https://www.tripadvisor.in/UserReview-${biz.platforms.tripadvisor}`
+        : null
+  },
+  booking: {
+    id: 'booking',
+    name: 'Booking.com',
+    icon: '🔵',
+    color: '#003580',
+    urlBuilder: (biz) =>
+      biz.platforms?.booking
+        ? `https://www.booking.com/hotel/in/${biz.platforms.booking}.html#tab-reviews`
+        : null
+  },
+  goibibo: {
+    id: 'goibibo',
+    name: 'Goibibo',
+    icon: '🟢',
+    color: '#FF6600',
+    urlBuilder: (biz) =>
+      biz.platforms?.goibibo
+        ? `https://www.goibibo.com/hotels/hotel-in-${biz.platforms.goibibo}`
+        : null
+  },
+  zomato: {
+    id: 'zomato',
+    name: 'Zomato',
+    icon: '🍕',
+    color: '#CB202D',
+    urlBuilder: (biz) =>
+      biz.platforms?.zomato
+        ? `https://www.zomato.com/restaurant/${biz.platforms.zomato}/reviews`
+        : null
+  },
+  swiggy: {
+    id: 'swiggy',
+    name: 'Swiggy',
+    icon: '🛵',
+    color: '#FC8019',
+    urlBuilder: (biz) =>
+      biz.platforms?.swiggy
+        ? `https://www.swiggy.com/restaurants/${biz.platforms.swiggy}`
+        : null
+  }
+};
+
+// Platform types per business type — which platforms to show
+const TYPE_PLATFORMS = {
+  restaurant: ['google', 'zomato', 'swiggy', 'tripadvisor'],
+  hotel:      ['google', 'oyo', 'makemytrip', 'fabhotel', 'tripadvisor', 'booking', 'goibibo'],
+  salon:      ['google', 'tripadvisor'],
+  bar:        ['google', 'zomato', 'tripadvisor'],
+  hospital:   ['google'],
+  cafe:       ['google', 'zomato', 'swiggy'],
+  gym:        ['google'],
+  spa:        ['google', 'tripadvisor'],
+  retail:     ['google'],
+  other:      ['google']
+};
+
+// ── CONSTANTS ────────────────────────────────────────────────────────────────
+const MOODS = {1:'Really Bad 😞',2:'Not Great 😕',3:'It Was Okay 😐',4:'Pretty Good 😊',5:'Absolutely Loved It! 🔥'};
+const ICONS = {restaurant:'🍽️',hotel:'🏨',salon:'💇',bar:'🍸',hospital:'🏥',cafe:'☕',gym:'💪',spa:'🧖',retail:'🛍️',other:'⭐'};
+
+// ── DEMO DATA ────────────────────────────────────────────────────────────────
+const DEMOS = {
   'spice-garden-001':{
     business:{id:'spice-garden-001',name:'Spice Garden',type:'restaurant',
       description:'Authentic North Indian cuisine — heirloom spices, modern artistry.',
       imageUrl:'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&q=80',
-      googlePlaceId:'ChIJN1t_tDeuEmsRUsoyG83frY4'}
+      googlePlaceId:'ChIJN1t_tDeuEmsRUsoyG83frY4',
+      platforms:{ zomato:'spice-garden-lucknow', swiggy:'12345' }
+    }
   },
   'taj-palace-002':{
     business:{id:'taj-palace-002',name:'Taj Palace Hotel',type:'hotel',
       description:'Five-star luxury — heritage architecture, royal suites, world-class amenities.',
       imageUrl:'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800&q=80',
-      googlePlaceId:'ChIJN1t_tDeuEmsRUsoyG83frY5'}
-  },
-  'urban-glow-003':{
-    business:{id:'urban-glow-003',name:'Urban Glow Salon',type:'salon',
-      description:'Premium hair styling, skin treatments & wellness rituals.',
-      imageUrl:'https://images.unsplash.com/photo-1560066984-138daaa5c91a?w=800&q=80',
-      googlePlaceId:'ChIJN1t_tDeuEmsRUsoyG83frY6'}
-  },
-  'the-barrel-004':{
-    business:{id:'the-barrel-004',name:'The Barrel & Brew',type:'bar',
-      description:'Craft cocktails, live jazz & electric night vibes.',
-      imageUrl:'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=800&q=80',
-      googlePlaceId:'ChIJN1t_tDeuEmsRUsoyG83frY7'}
+      googlePlaceId:'ChIJN1t_tDeuEmsRUsoyG83frY5',
+      platforms:{ oyo:'73070', makemytrip:'HTL123456', fabhotel:'taj-palace', tripadvisor:'g304551-d456789', booking:'taj-palace-new-delhi', goibibo:'taj-palace-delhi' }
+    }
   },
   'apollo-005':{
     business:{id:'apollo-005',name:'Apollo Medicity',type:'hospital',
       description:'Multi-speciality hospital — compassionate care & expert physicians.',
       imageUrl:'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&q=80',
-      googlePlaceId:'ChIJN1t_tDeuEmsRUsoyG83frY8'}
-  },
-  'brew-house-006':{
-    business:{id:'brew-house-006',name:'The Brew House Cafe',type:'cafe',
-      description:'Specialty single-origin coffees, artisan pastries & cozy workspace.',
-      imageUrl:'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=800&q=80',
-      googlePlaceId:'ChIJN1t_tDeuEmsRUsoyG83frY9'}
+      googlePlaceId:'ChIJN1t_tDeuEmsRUsoyG83frY8',
+      platforms:{}
+    }
   }
 };
 
-function offlineReview(r,type,name){
-  const T={
-    5:[`Honestly ${name} exceeded every expectation. The kind of experience you tell your friends about. 10/10, will be back!`,
-       `${name} is absolutely top-tier. Flawless from start to finish — this is how it's done.`,
-       `Had an amazing time at ${name}! Everything was perfect from beginning to end. Highly recommend to everyone!`],
-    4:[`Really enjoyed my time at ${name}! A few small things could be polished, but overall a very solid experience.`,
-       `${name} delivered a great visit. Staff was on point and the overall vibe was positive. Would recommend.`,
-       `Had a really good experience at ${name}. Quality was great and the staff was friendly. Will visit again.`],
-    3:[`${name} was decent overall — nothing extraordinary but not bad either. Room for improvement in a few areas.`,
-       `Mixed feelings about ${name}. Some things impressed me; others fell a bit flat. Okay if you have no other options.`,
-       `${name} was an average experience. Some good moments but also some let-downs. It's just okay.`],
-    2:[`${name} didn't quite meet expectations. Hopefully they address these issues — there's potential but a lot needs work.`,
-       `Below average experience at ${name}. I'd want to see significant improvement before returning.`,
-       `Was disappointed with my visit to ${name}. Several areas need attention before I would consider coming back.`],
-    1:[`Disappointed with ${name}. Would not recommend until major improvements are made across the board.`,
-       `${name} fell short on almost every front. Service, quality, everything — serious attention needed.`,
-       `Unfortunately ${name} was a poor experience. Many issues that need to be addressed urgently.`]
+// ── OFFLINE REVIEW TEMPLATES (max ~60 words each) ─────────────────────────────
+function offlineReview(r, type, name) {
+  const T = {
+    5:[`Had an amazing experience at ${name}! The quality and service were top-notch — everything exceeded expectations. Highly recommend to anyone looking for the best. Will definitely be back!`,
+       `${name} is absolutely outstanding! Flawless service, great atmosphere, and fantastic overall experience. One of the best I've visited. Can't recommend it enough!`],
+    4:[`Really enjoyed my visit to ${name}. Quality was great and the staff was welcoming. A few minor things could be better, but overall a solid experience. Would recommend!`,
+       `Good experience at ${name}. Service was prompt, quality was good, and the overall vibe was positive. Will visit again.`],
+    3:[`${name} was a decent experience — nothing extraordinary but satisfactory. Some areas could use improvement. Worth a visit if you're nearby.`,
+       `Average visit to ${name}. A few things impressed me, others fell short. Good enough for occasional visits.`],
+    2:[`Disappointed with my visit to ${name}. Several areas need improvement before I would consider returning. Hopefully they address these issues soon.`,
+       `Below average experience at ${name}. The quality and service didn't match expectations. Needs significant improvement.`],
+    1:[`Very poor experience at ${name}. Almost everything fell short of expectations. Would not recommend until major improvements are made.`,
+       `${name} was a let-down on multiple fronts. Service, quality — everything needs urgent attention.`]
   };
-  const pool=T[r]||T[3];
-  return pool[Math.floor(Math.random()*pool.length)];
+  const pool = T[r] || T[3];
+  return pool[Math.floor(Math.random() * pool.length)];
 }
 
-let S={
-  biz:null, rating:0, review:'', mode:'ai', generating:false, autoMode:false
+// Enforce word limit
+function enforceWordLimit(text, maxWords) {
+  const words = text.trim().split(/\s+/);
+  if (words.length <= maxWords) return text;
+  return words.slice(0, maxWords).join(' ') + '.';
+}
+
+function countWords(text) {
+  if (!text.trim()) return 0;
+  return text.trim().split(/\s+/).length;
+}
+
+// ── STATE ────────────────────────────────────────────────────────────────────
+let S = {
+  biz: null, rating: 0, review: '',
+  mode: 'ai', generating: false, autoMode: false,
+  selectedPlatform: 'google'
 };
 
-function bar(p){document.getElementById('bar').style.width=p+'%'}
+// ── UTILS ────────────────────────────────────────────────────────────────────
+function bar(p) { document.getElementById('bar').style.width = p + '%'; }
 
 let _tt;
-function toast(msg,type='teal',icon='✓'){
-  const el=document.getElementById('toast');
-  el.className='toast show '+type;
-  document.getElementById('t-icon').textContent=icon;
-  document.getElementById('t-msg').textContent=msg;
-  clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('show'),3200);
+function toast(msg, type='teal', icon='✓') {
+  const el = document.getElementById('toast');
+  el.className = 'toast show ' + type;
+  document.getElementById('t-icon').textContent = icon;
+  document.getElementById('t-msg').textContent = msg;
+  clearTimeout(_tt); _tt = setTimeout(() => el.classList.remove('show'), 3200);
 }
 
-function bizId(){
-  const p=location.pathname.split('/');
-  return p[p.indexOf('review')+1]||null;
+function bizId() {
+  const p = location.pathname.split('/');
+  return p[p.indexOf('review') + 1] || null;
 }
 
-/* PARTICLES */
-const cv=document.getElementById('particleCanvas');
-const ctx=cv.getContext('2d');
-cv.width=window.innerWidth;cv.height=window.innerHeight;
-window.addEventListener('resize',()=>{cv.width=window.innerWidth;cv.height=window.innerHeight});
+// ── PARTICLES ────────────────────────────────────────────────────────────────
+const cv = document.getElementById('particleCanvas');
+const ctx = cv.getContext('2d');
+cv.width = window.innerWidth; cv.height = window.innerHeight;
+window.addEventListener('resize', () => { cv.width = window.innerWidth; cv.height = window.innerHeight; });
 
-let particles=[];
-function burst(x,y){
-  for(let i=0;i<28;i++){
-    const ang=Math.random()*Math.PI*2;
-    const spd=2+Math.random()*5;
-    const r=Math.random()>.5?'#00E5CC':'#FF5A35';
-    particles.push({x,y,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd,life:1,r,sz:2+Math.random()*4});
+let particles = [];
+function burst(x, y) {
+  for (let i = 0; i < 28; i++) {
+    const ang = Math.random() * Math.PI * 2;
+    const spd = 2 + Math.random() * 5;
+    const r = Math.random() > .5 ? '#00E5CC' : '#FF5A35';
+    particles.push({ x, y, vx: Math.cos(ang)*spd, vy: Math.sin(ang)*spd, life:1, r, sz: 2+Math.random()*4 });
   }
 }
-function animParticles(){
-  ctx.clearRect(0,0,cv.width,cv.height);
-  particles=particles.filter(p=>p.life>0);
-  particles.forEach(p=>{
-    p.x+=p.vx;p.y+=p.vy;p.vy+=.15;p.life-=.025;
-    ctx.save();ctx.globalAlpha=p.life;
-    ctx.fillStyle=p.r;ctx.beginPath();ctx.arc(p.x,p.y,p.sz,0,Math.PI*2);ctx.fill();
+(function animParticles() {
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  particles = particles.filter(p => p.life > 0);
+  particles.forEach(p => {
+    p.x += p.vx; p.y += p.vy; p.vy += .15; p.life -= .025;
+    ctx.save(); ctx.globalAlpha = p.life;
+    ctx.fillStyle = p.r; ctx.beginPath(); ctx.arc(p.x, p.y, p.sz, 0, Math.PI*2); ctx.fill();
     ctx.restore();
   });
   requestAnimationFrame(animParticles);
-}
-animParticles();
+})();
 
-/* FETCH */
-async function fetchBiz(id){
+// ── FETCH ────────────────────────────────────────────────────────────────────
+async function fetchBiz(id) {
   bar(30);
-  try{
-    const r=await fetch(`${API}/business/${id}`,{signal:AbortSignal.timeout(5000)});
+  try {
+    const r = await fetch(`${API}/business/${id}`, { signal: AbortSignal.timeout(5000) });
     bar(70);
-    if(!r.ok)throw new Error(r.status===404?'Business not found':'Server error');
+    if (!r.ok) throw new Error(r.status === 404 ? 'Business not found' : 'Server error');
     return r.json();
-  }catch{
+  } catch {
     bar(70);
-    if(DEMOS[id]){console.info('Demo mode:',id);return DEMOS[id];}
+    if (DEMOS[id]) { console.info('Demo mode:', id); return DEMOS[id]; }
     throw new Error('Business not found');
   }
 }
 
-/* AI GENERATION */
-async function generateAI(){
-  if(!S.rating||S.generating)return;
-  S.generating=true;
-
+// ── AI GENERATION ─────────────────────────────────────────────────────────────
+async function generateAI() {
+  if (!S.rating || S.generating) return;
+  S.generating = true;
   showCard('reviewCard');
   setReviewBody(loadingHTML());
 
-  try{
-    const r=await fetch(`${API}/generate-review`,{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      signal:AbortSignal.timeout(15000),
-      body:JSON.stringify({rating:S.rating,businessType:S.biz.type,businessName:S.biz.name,selectedChips:[]})
+  try {
+    const r = await fetch(`${API}/generate-review`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(15000),
+      body: JSON.stringify({
+        rating: S.rating,
+        businessType: S.biz.type,
+        businessName: S.biz.name,
+        selectedChips: [],
+        maxWords: MAX_WORDS  // <-- send word limit to backend
+      })
     });
-    const d=await r.json();
-    if(!r.ok)throw new Error(d.error||'Failed');
-    S.review=d.review;
-  }catch(e){
-    const net=e.name==='TypeError'||e.name==='AbortError';
-    if(net){S.review=offlineReview(S.rating,S.biz.type,S.biz.name);toast('AI review ready','teal','✨');}
-    else{S.review='';toast(e.message||'Try again','coral','✕');}
-  }finally{
-    S.generating=false;
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Failed');
+    // Enforce word limit on frontend too
+    S.review = enforceWordLimit(d.review, MAX_WORDS);
+  } catch (e) {
+    const net = e.name === 'TypeError' || e.name === 'AbortError';
+    if (net) {
+      S.review = offlineReview(S.rating, S.biz.type, S.biz.name);
+      toast('AI review ready', 'teal', '✨');
+    } else {
+      S.review = ''; toast(e.message || 'Try again', 'coral', '✕');
+    }
+  } finally {
+    S.generating = false;
     setReviewBody(reviewHTML());
-    if(S.review)showCard('actionsCard');
-    setTimeout(()=>document.getElementById('actionsCard')?.scrollIntoView({behavior:'smooth',block:'nearest'}),200);
+    if (S.review) showCard('actionsCard');
+    setTimeout(() => document.getElementById('actionsCard')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 200);
   }
 }
 
-function typewrite(el,text){
-  el.value='';let i=0;
-  const t=setInterval(()=>{el.value+=text[i++];if(i>=text.length)clearInterval(t);},18);
+function typewrite(el, text) {
+  el.value = ''; let i = 0;
+  const t = setInterval(() => { el.value += text[i++]; updateWordCount(el); if (i >= text.length) clearInterval(t); }, 18);
 }
 
-function loadingHTML(){
+// ── WORD COUNT UI ────────────────────────────────────────────────────────────
+function updateWordCount(el) {
+  const wc = countWords(el.value);
+  const pct = Math.min((wc / MAX_WORDS) * 100, 100);
+  const warn = wc > MAX_WORDS;
+
+  const fill = document.getElementById('wordFill');
+  const txt  = document.getElementById('wordTxt');
+  if (fill) { fill.style.width = pct + '%'; fill.className = 'word-bar-fill' + (warn ? ' warn' : ''); }
+  if (txt)  { txt.textContent = `${wc}/${MAX_WORDS} words`; txt.className = 'word-count-txt' + (warn ? ' warn' : ''); }
+
+  // Update state
+  S.review = el.value;
+}
+
+// ── HTML BUILDERS ────────────────────────────────────────────────────────────
+function loadingHTML() {
   return `<div class="dots-wrap">
     <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
     <div class="dots-label">Zuit AI is writing your review…</div>
   </div>`;
 }
 
-function reviewHTML(){
+function reviewHTML() {
+  const wc = countWords(S.review);
+  const pct = Math.min((wc / MAX_WORDS) * 100, 100);
+  const warn = wc > MAX_WORDS;
   return `
   <div class="ai-header">
     <div class="ai-badge">
@@ -513,10 +535,17 @@ function reviewHTML(){
     <span style="font-size:12px;color:var(--muted)">You can edit this</span>
   </div>
   <textarea class="review-box" id="reviewText" maxlength="500"
-    oninput="S.review=this.value;document.getElementById('cc').textContent=this.value.length+'/500'"
-    placeholder="Review will show here…">${S.review}</textarea>
-  <div class="review-footer">
-    <span class="char-ct" id="cc">${S.review.length}/500</span>
+    oninput="updateWordCount(this)"
+    placeholder="Your AI-generated review will appear here…">${S.review}</textarea>
+  <div class="word-bar-wrap">
+    <div class="word-bar-track"><div class="word-bar-fill${warn ? ' warn' : ''}" id="wordFill" style="width:${pct}%"></div></div>
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:11px;color:var(--muted2)">Keep it short & natural</span>
+      <span class="word-count-txt${warn ? ' warn' : ''}" id="wordTxt">${wc}/${MAX_WORDS} words</span>
+    </div>
+  </div>
+  <div class="review-footer" style="margin-top:8px">
+    <span style="font-size:11px;color:var(--muted2)"></span>
     <button class="regen-btn" onclick="generateAI()">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
@@ -526,303 +555,282 @@ function reviewHTML(){
   </div>`;
 }
 
-function showCard(id){
-  const el=document.getElementById(id);
-  if(!el)return;
-  el.style.display='block';
-  void el.offsetWidth;
-  setTimeout(()=>el.classList.add('in'),20);
-  // Refresh action buttons whenever this card is shown
-  if(id==='actionsCard')renderActionButtons();
+// ── PLATFORM SELECTOR ─────────────────────────────────────────────────────────
+function getAvailablePlatforms() {
+  const biz = S.biz;
+  const typeList = TYPE_PLATFORMS[biz.type] || ['google'];
+  return typeList.filter(pid => {
+    const plat = PLATFORMS[pid];
+    if (!plat) return false;
+    const url = plat.urlBuilder(biz);
+    return url !== null; // only show platforms that have a URL
+  });
 }
 
-function setReviewBody(html){
-  const el=document.getElementById('reviewBody');
-  if(el)el.innerHTML=html;
-  if(!S.generating&&S.review){
-    const ta=document.getElementById('reviewText');
-    if(ta)typewrite(ta,S.review);
+function platformSelectorHTML() {
+  const available = getAvailablePlatforms();
+  if (available.length <= 1) return ''; // don't show if only Google
+
+  return `
+    <div style="margin-bottom:16px">
+      <div class="platform-label">📍 Where did you book / find us?</div>
+      <div class="platforms-grid">
+        ${available.map(pid => {
+          const p = PLATFORMS[pid];
+          return `<button class="plat-btn ${S.selectedPlatform === pid ? 'selected' : ''}"
+            onclick="selectPlatform('${pid}')">
+            <span class="plat-icon">${p.icon}</span>
+            <span class="plat-name">${p.name}</span>
+          </button>`;
+        }).join('')}
+      </div>
+    </div>`;
+}
+
+function selectPlatform(pid) {
+  S.selectedPlatform = pid;
+  // Re-render platform selector
+  const ps = document.getElementById('platformSelector');
+  if (ps) ps.innerHTML = platformSelectorHTML();
+  // Update action buttons
+  renderActionButtons();
+  toast(`Redirecting to ${PLATFORMS[pid].name}`, 'teal', PLATFORMS[pid].icon);
+}
+
+// ── CARD HELPERS ────────────────────────────────────────────────────────────
+function showCard(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.display = 'block';
+  void el.offsetWidth;
+  setTimeout(() => el.classList.add('in'), 20);
+  if (id === 'actionsCard') renderActionButtons();
+}
+
+function setReviewBody(html) {
+  const el = document.getElementById('reviewBody');
+  if (el) el.innerHTML = html;
+  if (!S.generating && S.review) {
+    const ta = document.getElementById('reviewText');
+    if (ta) typewrite(ta, S.review);
   }
 }
 
-function updateStars(n){
-  document.querySelectorAll('.star-btn').forEach((b,i)=>{
-    b.classList.toggle('lit',i<n);
-  });
-  const lbl=document.getElementById('moodLabel');
-  if(lbl)lbl.textContent=n?MOODS[n]:'';
+function updateStars(n) {
+  document.querySelectorAll('.star-btn').forEach((b, i) => b.classList.toggle('lit', i < n));
+  const lbl = document.getElementById('moodLabel');
+  if (lbl) lbl.textContent = n ? MOODS[n] : '';
 }
 
-/* STAR CLICK — auto-generate review immediately */
-function selectRating(n,ev){
-  S.rating=n;S.review='';
+// ── STAR CLICK ───────────────────────────────────────────────────────────────
+function selectRating(n, ev) {
+  S.rating = n; S.review = '';
   updateStars(n);
+  const rect = ev.currentTarget.getBoundingClientRect();
+  burst(rect.left + rect.width/2, rect.top + rect.height/2);
+  if (navigator.vibrate) navigator.vibrate(30);
 
-  const rect=ev.currentTarget.getBoundingClientRect();
-  burst(rect.left+rect.width/2,rect.top+rect.height/2);
-  if(navigator.vibrate)navigator.vibrate(30);
+  const rc = document.getElementById('reviewCard'), ac = document.getElementById('actionsCard');
+  if (rc) { rc.style.display = 'none'; rc.classList.remove('in'); }
+  if (ac) { ac.style.display = 'none'; ac.classList.remove('in'); }
 
-  // Hide old cards
-  const rc=document.getElementById('reviewCard'),ac=document.getElementById('actionsCard');
-  if(rc){rc.style.display='none';rc.classList.remove('in');}
-  if(ac){ac.style.display='none';ac.classList.remove('in');}
-
-  // Auto-generate immediately
-  setTimeout(async()=>{
+  setTimeout(async () => {
     await generateAI();
-
-    // AUTO MODE: auto-redirect for positive, show empathy for negative
-    if(S.autoMode){
-      if(isNegativeRating()){
-        saveReviewMongo('negative');
-        saveAnalytics(false);
-        showNegativeScreen();
-        return;
-      }
-      setTimeout(async()=>{
-        const txt=document.getElementById('reviewText')?.value||S.review;
-        if(!txt.trim())return;
-        try{await navigator.clipboard.writeText(txt);}catch{
-          const t=document.createElement('textarea');t.value=txt;t.style.cssText='position:fixed;opacity:0';
-          document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);
-        }
-        saveReviewMongo('positive');
+    if (S.autoMode && !isNegativeRating()) {
+      setTimeout(async () => {
+        const txt = getCurrentReviewText();
+        if (!txt.trim()) return;
+        await copyToClipboard(txt);
         saveAnalytics(true);
         showPasteHelper(txt);
-        setTimeout(()=>window.open('https://search.google.com/local/writereview?placeid='+S.biz.googlePlaceId,'_blank'),1200);
-      },1800);
+        setTimeout(() => redirectToPlatform(), 1200);
+      }, 1800);
+    } else if (S.autoMode && isNegativeRating()) {
+      saveReviewMongo('negative'); saveAnalytics(false); showNegativeScreen();
     }
-  },300);
+  }, 300);
 
-  setTimeout(()=>document.getElementById('reviewCard')?.scrollIntoView({behavior:'smooth',block:'nearest'}),350);
+  setTimeout(() => document.getElementById('reviewCard')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 350);
 }
 
-/* COPY & POST */
-async function copyReview(){
-  const txt=getCurrentReviewText();
-  if(!txt.trim()){toast('Please write or generate a review first','coral','✕');return false;}
-  try{await navigator.clipboard.writeText(txt);return true;}
-  catch{
-    const t=document.createElement('textarea');
-    t.value=txt;t.style.cssText='position:fixed;opacity:0';
-    document.body.appendChild(t);t.select();document.execCommand('copy');
-    document.body.removeChild(t);return true;
-  }
-}
-
-function getCurrentReviewText(){
-  if(S.mode==='direct'){
-    return document.getElementById('directText')?.value||'';
-  }
-  return document.getElementById('reviewText')?.value||S.review||'';
-}
-
-function saveAnalytics(posted){
-  const txt=getCurrentReviewText();
-  fetch(`${API}/save-analytics`,{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({businessId:S.biz.id,rating:S.rating,chips:[],reviewLength:txt.length,wasPosted:posted})
-  }).catch(()=>{});
-}
-
-function saveReviewMongo(type){
-  const txt=getCurrentReviewText();
-  fetch(`${API}/save-review`,{
-    method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      businessId:   S.biz.id,
-      businessName: S.biz.name,
-      rating:       S.rating,
-      reviewText:   txt,
-      chips:        [],
-      type:         type,
-      sentToGoogle: type==='positive'
-    })
-  }).catch(()=>{});
-}
-
-function isNegativeRating(){ return S.rating <= 2; }
-
-function showNegativeScreen(){
-  const rb=document.getElementById('reviewBody');
-  if(rb){
-    rb.innerHTML=`<div class="neg-notice">
-      <div class="n-icon">🙏</div>
-      <div class="n-title">We're Sorry!</div>
-      <div class="n-sub">Your feedback has been received. Our team will work on it and improve your experience.<br><br>Thank you for letting us know — it means a lot! 💙</div>
-    </div>`;
-  }
-  const ac=document.getElementById('actionsCard');
-  if(ac){ac.style.display='none';ac.classList.remove('in');}
-  toast('Your feedback has been saved','teal','✓');
-}
-
-async function quickCopy(){
-  if(await copyReview())toast('Review copied to clipboard','teal','📋');
-}
-
-/* SUBMIT (negative reviews) */
-function submitFeedback(){
-  const txt=getCurrentReviewText();
-  if(!txt.trim()){toast('Please write a review first','coral','✕');return;}
-  saveReviewMongo('negative');
-  saveAnalytics(false);
-  showNegativeScreen();
-}
-
-/* POST ON GOOGLE (positive reviews) */
-async function postGoogle(){
-  const txt=getCurrentReviewText();
-  if(!txt.trim()){toast('Please write a review first','coral','✕');return;}
-
-  try{await navigator.clipboard.writeText(txt);}
-  catch{
-    const t=document.createElement('textarea');
-    t.value=txt;t.style.cssText='position:fixed;opacity:0';
-    document.body.appendChild(t);t.select();document.execCommand('copy');
+// ── COPY & POST ──────────────────────────────────────────────────────────────
+async function copyToClipboard(txt) {
+  try { await navigator.clipboard.writeText(txt); }
+  catch {
+    const t = document.createElement('textarea');
+    t.value = txt; t.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(t); t.select(); document.execCommand('copy');
     document.body.removeChild(t);
   }
+}
+
+function getCurrentReviewText() {
+  if (S.mode === 'direct') return document.getElementById('directText')?.value || '';
+  return document.getElementById('reviewText')?.value || S.review || '';
+}
+
+function isNegativeRating() { return S.rating <= 2; }
+
+function saveAnalytics(posted) {
+  const txt = getCurrentReviewText();
+  fetch(`${API}/save-analytics`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ businessId: S.biz.id, rating: S.rating, chips: [], reviewLength: txt.length, wasPosted: posted })
+  }).catch(() => {});
+}
+
+function saveReviewMongo(type) {
+  const txt = getCurrentReviewText();
+  fetch(`${API}/save-review`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ businessId: S.biz.id, businessName: S.biz.name, rating: S.rating, reviewText: txt, chips: [], type, sentToGoogle: type === 'positive' })
+  }).catch(() => {});
+}
+
+// ── PLATFORM REDIRECT ────────────────────────────────────────────────────────
+function redirectToPlatform() {
+  const plat = PLATFORMS[S.selectedPlatform] || PLATFORMS.google;
+  const url = plat.urlBuilder(S.biz) || PLATFORMS.google.urlBuilder(S.biz);
+  window.open(url, '_blank');
+}
+
+// ── POST ON PLATFORM ─────────────────────────────────────────────────────────
+async function postOnPlatform() {
+  const txt = getCurrentReviewText();
+  if (!txt.trim()) { toast('Please write or generate a review first', 'coral', '✕'); return; }
+
+  // Warn if over word limit
+  if (countWords(txt) > MAX_WORDS + 10) {
+    toast('Review is too long — please shorten it', 'coral', '⚠️');
+    return;
+  }
+
+  await copyToClipboard(txt);
   saveReviewMongo('positive');
   saveAnalytics(true);
   showPasteHelper(txt);
-  setTimeout(()=>{
-    window.open('https://search.google.com/local/writereview?placeid='+S.biz.googlePlaceId,'_blank');
-  },1200);
+  setTimeout(() => redirectToPlatform(), 1200);
 }
 
-function showPasteHelper(txt){
-  document.getElementById('pasteHelper')?.remove();
-  
-  const el=document.createElement('div');
-  el.id='pasteHelper';
-  el.style.cssText=`
-    position:fixed;inset:0;z-index:900;
-    background:rgba(7,7,18,0.95);backdrop-filter:blur(16px);
-    display:flex;flex-direction:column;align-items:center;justify-content:center;
-    gap:20px;padding:24px;animation:appIn .4s ease;
-  `;
-  el.innerHTML=`
-    <div style="font-size:52px">📋</div>
-    <div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;
-      background:linear-gradient(135deg,#00E5CC,#FF5A35);
-      -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-      text-align:center">Review Copied!</div>
-    
-    <div style="background:rgba(0,229,204,0.08);border:1px solid rgba(0,229,204,0.25);
-      border-radius:16px;padding:20px 24px;max-width:380px;width:100%">
-      <div style="font-size:12px;color:rgba(0,229,204,0.8);font-weight:700;
-        letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px">Your Review</div>
-      <div style="font-size:13.5px;color:#E0E8FF;line-height:1.65;
-        max-height:100px;overflow-y:auto">${txt}</div>
-    </div>
+async function quickCopy() {
+  const txt = getCurrentReviewText();
+  if (!txt.trim()) { toast('Nothing to copy yet', 'coral', '✕'); return; }
+  await copyToClipboard(txt);
+  toast('Review copied to clipboard!', 'teal', '📋');
+}
 
-    <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);
-      border-radius:16px;padding:20px 24px;max-width:380px;width:100%;text-align:center">
-      <div style="font-size:28px;margin-bottom:10px">🌐</div>
-      <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;
-        color:#F0F4FF;margin-bottom:8px">Google Review Page is Opening...</div>
+function submitFeedback() {
+  const txt = getCurrentReviewText();
+  if (!txt.trim()) { toast('Please write a review first', 'coral', '✕'); return; }
+  saveReviewMongo('negative'); saveAnalytics(false); showNegativeScreen();
+}
+
+function showNegativeScreen() {
+  const rb = document.getElementById('reviewBody');
+  if (rb) {
+    rb.innerHTML = `<div class="neg-notice">
+      <div class="n-icon">🙏</div>
+      <div class="n-title">We're Sorry!</div>
+      <div class="n-sub">Your feedback has been received. Our team will work on improving your experience.<br><br>Thank you for letting us know — it means a lot! 💙</div>
+    </div>`;
+  }
+  const ac = document.getElementById('actionsCard');
+  if (ac) { ac.style.display = 'none'; ac.classList.remove('in'); }
+  toast('Your feedback has been saved', 'teal', '✓');
+}
+
+function showPasteHelper(txt) {
+  document.getElementById('pasteHelper')?.remove();
+  const plat = PLATFORMS[S.selectedPlatform] || PLATFORMS.google;
+  const el = document.createElement('div');
+  el.id = 'pasteHelper';
+  el.style.cssText = `position:fixed;inset:0;z-index:900;background:rgba(7,7,18,0.95);backdrop-filter:blur(16px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:24px;animation:appIn .4s ease`;
+  el.innerHTML = `
+    <div style="font-size:52px">📋</div>
+    <div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;background:linear-gradient(135deg,#00E5CC,#FF5A35);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-align:center">Review Copied!</div>
+    <div style="background:rgba(0,229,204,0.08);border:1px solid rgba(0,229,204,0.25);border-radius:16px;padding:20px 24px;max-width:380px;width:100%">
+      <div style="font-size:12px;color:rgba(0,229,204,0.8);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px">Your Review (${countWords(txt)} words)</div>
+      <div style="font-size:13.5px;color:#E0E8FF;line-height:1.65;max-height:100px;overflow-y:auto">${txt}</div>
+    </div>
+    <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:20px 24px;max-width:380px;width:100%;text-align:center">
+      <div style="font-size:28px;margin-bottom:10px">${plat.icon}</div>
+      <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:#F0F4FF;margin-bottom:8px">${plat.name} Review Page is Opening…</div>
       <div style="font-size:13px;color:rgba(200,210,240,0.55);line-height:1.6">
-        When Google opens, click inside the review box and press<br>
-        <span style="background:rgba(0,229,204,0.15);border:1px solid rgba(0,229,204,0.3);
-          color:#00E5CC;font-weight:700;padding:3px 10px;border-radius:6px;
-          font-size:14px;margin:4px 2px;display:inline-block">Ctrl + V</span>
+        When ${plat.name} opens, click the review box and press<br>
+        <span style="background:rgba(0,229,204,0.15);border:1px solid rgba(0,229,204,0.3);color:#00E5CC;font-weight:700;padding:3px 10px;border-radius:6px;font-size:14px;margin:4px 2px;display:inline-block">Ctrl + V</span>
         <span style="color:rgba(200,210,240,0.4)">or</span>
-        <span style="background:rgba(0,229,204,0.15);border:1px solid rgba(0,229,204,0.3);
-          color:#00E5CC;font-weight:700;padding:3px 10px;border-radius:6px;
-          font-size:14px;margin:4px 2px;display:inline-block">Long Press → Paste</span>
+        <span style="background:rgba(0,229,204,0.15);border:1px solid rgba(0,229,204,0.3);color:#00E5CC;font-weight:700;padding:3px 10px;border-radius:6px;font-size:14px;margin:4px 2px;display:inline-block">Long Press → Paste</span>
         on mobile
       </div>
     </div>
-
     <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">
-      <button onclick="navigator.clipboard.writeText(\`${txt.replace(/`/g,"'")}\`).then(()=>{})" 
-        style="background:linear-gradient(135deg,#00E5CC,#00BFAD);color:#050510;
-        font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;
-        padding:13px 24px;border-radius:12px;border:none;cursor:pointer">
-        📋 Copy Again
-      </button>
-      <button onclick="document.getElementById('pasteHelper').remove()"
-        style="background:transparent;border:1px solid rgba(255,255,255,0.1);
-        color:rgba(200,210,240,0.6);font-family:'Outfit',sans-serif;font-size:14px;
-        padding:13px 24px;border-radius:12px;cursor:pointer">
-        Close
-      </button>
-    </div>
-  `;
+      <button onclick="navigator.clipboard.writeText(document.getElementById('reviewText')?.value||'${txt.replace(/'/g,"\\'")}').then(()=>{})" style="background:linear-gradient(135deg,#00E5CC,#00BFAD);color:#050510;font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;padding:13px 24px;border-radius:12px;border:none;cursor:pointer">📋 Copy Again</button>
+      <button onclick="document.getElementById('pasteHelper').remove()" style="background:transparent;border:1px solid rgba(255,255,255,0.1);color:rgba(200,210,240,0.6);font-family:'Outfit',sans-serif;font-size:14px;padding:13px 24px;border-radius:12px;cursor:pointer">Close</button>
+    </div>`;
   document.body.appendChild(el);
 }
 
-function switchMode(m){
-  S.mode=m;
-  document.querySelectorAll('.mode-tab').forEach(t=>t.classList.toggle('active',t.dataset.m===m));
-  const aiSec=document.getElementById('aiSection');
-  const drSec=document.getElementById('directSection');
-  if(aiSec)aiSec.style.display=m==='ai'?'block':'none';
-  if(drSec)drSec.style.display=m==='direct'?'block':'none';
+// ── ACTION BUTTONS ────────────────────────────────────────────────────────────
+function renderActionButtons() {
+  const wrap = document.getElementById('actionsWrap');
+  const lbl  = document.getElementById('actionsLabel');
+  if (!wrap) return;
 
-  // If switching to direct mode and actions card not visible, show it
-  if(m==='direct'){
-    showCard('actionsCard');
-  }
-  renderActionButtons();
-}
-
-/* Render action buttons based on rating */
-function renderActionButtons(){
-  const wrap=document.getElementById('actionsWrap');
-  if(!wrap)return;
-
-  if(isNegativeRating()){
-    // NEGATIVE → only Submit + Copy
-    wrap.innerHTML=`
+  if (isNegativeRating()) {
+    if (lbl) lbl.textContent = 'Share Your Feedback';
+    wrap.innerHTML = `
       <button class="btn-main btn-coral" onclick="submitFeedback()">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/>
-        </svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
         Submit Feedback
       </button>
       <button class="btn-main btn-ghost" onclick="quickCopy()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="9" y="9" width="13" height="13" rx="2"/>
-          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-        </svg>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
         Copy to Clipboard
       </button>`;
-    document.getElementById('actionsLabel').textContent='Share Your Feedback';
   } else {
-    // POSITIVE → Post on Google + Copy
-    wrap.innerHTML=`
-      <button class="btn-main btn-google" onclick="postGoogle()">
-        <svg width="20" height="20" viewBox="0 0 24 24">
-          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#fff"/>
-          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#fff"/>
-          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#fff"/>
-          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#fff"/>
-        </svg>
-        Post on Google
+    const plat = PLATFORMS[S.selectedPlatform] || PLATFORMS.google;
+    const isGoogle = S.selectedPlatform === 'google';
+    if (lbl) lbl.textContent = `Post on ${plat.name}`;
+
+    // Platform button color
+    const btnStyle = isGoogle
+      ? 'background:linear-gradient(135deg,#4285F4,#34A853)'
+      : `background:linear-gradient(135deg,${plat.color},${plat.color}dd)`;
+
+    wrap.innerHTML = `
+      ${document.getElementById('platformSelector') ? '' : `<div id="platformSelector">${platformSelectorHTML()}</div>`}
+      <button class="btn-main btn-google" style="${btnStyle}" onclick="postOnPlatform()">
+        <span style="font-size:20px">${plat.icon}</span>
+        Post on ${plat.name}
       </button>
       <button class="btn-main btn-ghost" onclick="quickCopy()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="9" y="9" width="13" height="13" rx="2"/>
-          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-        </svg>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
         Copy to Clipboard
       </button>`;
-    document.getElementById('actionsLabel').textContent='Share on Google';
   }
 }
 
-/* RENDER */
-function render(){
-  const b=S.biz;
-  const icon=ICONS[b.type]||'⭐';
-  bar(100);setTimeout(()=>bar(0),600);
-  document.title=`Review — ${b.name} | Zuit`;
+function switchMode(m) {
+  S.mode = m;
+  document.querySelectorAll('.mode-tab').forEach(t => t.classList.toggle('active', t.dataset.m === m));
+  document.getElementById('aiSection').style.display  = m === 'ai' ? 'block' : 'none';
+  document.getElementById('directSection').style.display = m === 'direct' ? 'block' : 'none';
+  if (m === 'direct') showCard('actionsCard');
+  renderActionButtons();
+}
 
-  const autoBanner = S.autoMode 
-    ? '<div class="auto-banner"><span>⚡</span><span>Quick mode: Tap a star and your review will be ready instantly!</span></div>' 
+// ── RENDER ────────────────────────────────────────────────────────────────────
+function render() {
+  const b = S.biz;
+  const icon = ICONS[b.type] || '⭐';
+  bar(100); setTimeout(() => bar(0), 600);
+  document.title = `Review — ${b.name} | Zuit`;
+
+  const autoBanner = S.autoMode
+    ? '<div class="auto-banner"><span>⚡</span><span>Quick mode: Tap a star and your review will be ready instantly!</span></div>'
     : '';
 
-  const html=`
+  const html = `
     <div class="hero">
       <img class="hero-img" src="${b.imageUrl}" alt="${b.name}" onload="this.classList.add('loaded')"/>
       <div class="hero-vignette"></div>
@@ -835,20 +843,21 @@ function render(){
 
     <div class="zuit-about">
       <div class="zuit-icon">Z</div>
-      <div class="zuit-about-text">
+      <div>
         <div class="zuit-about-title">What is Zuit?</div>
-        <div class="zuit-about-sub">Tap a star → Zuit AI writes your review → Share it with one click. Just 10 seconds.</div>
+        <div class="zuit-about-sub">Tap a star → AI writes your review → Post it in one click. Just 5 seconds.</div>
       </div>
     </div>
 
     <div class="cards">
 
+      <!-- RATING CARD -->
       <div class="card" id="ratingCard">
         <div class="card-label">Rate Your Experience</div>
         ${autoBanner}
         <div class="stars-wrap" onmouseleave="updateStars(S.rating)">
-          ${[1,2,3,4,5].map(n=>`
-            <button class="star-btn ${S.rating>=n?'lit':''}" id="s${n}"
+          ${[1,2,3,4,5].map(n => `
+            <button class="star-btn ${S.rating >= n ? 'lit' : ''}" id="s${n}"
               onmouseover="updateStars(${n})"
               onclick="selectRating(${n},event)"
               aria-label="${n} star">
@@ -857,76 +866,82 @@ function render(){
               </svg>
             </button>`).join('')}
         </div>
-        <div class="rating-mood" id="moodLabel">${S.rating?MOODS[S.rating]:'Tap a star to rate ⬆'}</div>
+        <div class="rating-mood" id="moodLabel">${S.rating ? MOODS[S.rating] : 'Tap a star to rate ⬆'}</div>
       </div>
 
+      <!-- REVIEW CARD -->
       <div class="card" id="reviewCard" style="display:none">
         <div class="card-label">Your Review</div>
-
         <div class="mode-tabs">
           <button class="mode-tab active" data-m="ai" onclick="switchMode('ai')">🤖 AI Review</button>
           <button class="mode-tab" data-m="direct" onclick="switchMode('direct')">✏️ Write Myself</button>
         </div>
-
         <div id="aiSection">
           <div id="reviewBody">${reviewHTML()}</div>
         </div>
-
         <div id="directSection" style="display:none">
           <textarea class="direct-textarea" id="directText" maxlength="500"
-            placeholder="Write your own review here…"
-            oninput="S.review=this.value"></textarea>
-          <div style="margin-top:10px;text-align:right;font-size:12px;color:var(--muted)">
-            Max 500 characters
+            placeholder="Write your own review here… (keep it under ${MAX_WORDS} words)"
+            oninput="S.review=this.value;updateWordCount(this)"></textarea>
+          <div class="word-bar-wrap">
+            <div class="word-bar-track"><div class="word-bar-fill" id="wordFill" style="width:0%"></div></div>
+            <div style="display:flex;justify-content:flex-end">
+              <span class="word-count-txt" id="wordTxt">0/${MAX_WORDS} words</span>
+            </div>
           </div>
         </div>
       </div>
 
+      <!-- ACTIONS CARD -->
       <div class="card" id="actionsCard" style="display:none">
-        <div class="card-label" id="actionsLabel">Share on Google</div>
+        <div class="card-label" id="actionsLabel">Share Your Review</div>
+        <div id="platformSelector"></div>
         <div style="display:flex;flex-direction:column;gap:11px" id="actionsWrap"></div>
       </div>
 
     </div>
-
     <div class="powered">Powered by <span>Zuit</span> · AI Review Platform</div>`;
 
-  document.getElementById('skeleton').style.display='none';
-  const ct=document.getElementById('content');
-  ct.innerHTML=html;ct.style.display='block';
+  document.getElementById('skeleton').style.display = 'none';
+  const ct = document.getElementById('content');
+  ct.innerHTML = html; ct.style.display = 'block';
 
-  const obs=new IntersectionObserver(entries=>{
-    entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');obs.unobserve(e.target);}});
-  },{threshold:.08});
-  document.querySelectorAll('.card').forEach(c=>{
-    if(c.style.display!=='none')obs.observe(c);
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); obs.unobserve(e.target); } });
+  }, { threshold: .08 });
+  document.querySelectorAll('.card').forEach(c => {
+    if (c.style.display !== 'none') obs.observe(c);
   });
 }
 
-function renderError(msg){
+function renderError(msg) {
   bar(0);
-  document.getElementById('skeleton').style.display='none';
-  const ct=document.getElementById('content');
-  ct.style.display='block';
-  ct.innerHTML=`<div class="err-state">
+  document.getElementById('skeleton').style.display = 'none';
+  const ct = document.getElementById('content');
+  ct.style.display = 'block';
+  ct.innerHTML = `<div class="err-state">
     <div class="err-icon">🔍</div>
     <div class="err-title">Not Found</div>
     <div class="err-sub">${msg}</div>
   </div>`;
 }
 
-(async()=>{
-  S.autoMode = new URLSearchParams(location.search).get('auto')==='1';
+// ── BOOT ──────────────────────────────────────────────────────────────────────
+(async () => {
+  S.autoMode = new URLSearchParams(location.search).get('auto') === '1';
+  // Platform from URL: /review/hotel-001?platform=oyo
+  const urlPlatform = new URLSearchParams(location.search).get('platform');
+  if (urlPlatform && PLATFORMS[urlPlatform]) S.selectedPlatform = urlPlatform;
 
-  const id=bizId();
-  if(!id){renderError('Business ID is missing in URL.');return;}
-  try{
+  const id = bizId();
+  if (!id) { renderError('Business ID is missing in URL.'); return; }
+  try {
     bar(15);
-    const d=await fetchBiz(id);
-    S.biz=d.business;
+    const d = await fetchBiz(id);
+    S.biz = d.business;
     render();
-  }catch(e){
-    renderError(e.message||'Failed to load data.');
+  } catch (e) {
+    renderError(e.message || 'Failed to load data.');
   }
 })();
 </script>
