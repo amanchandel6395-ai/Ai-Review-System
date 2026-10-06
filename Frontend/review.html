@@ -243,7 +243,7 @@ const API = window.API_BASE ||
   (location.hostname === 'localhost'
     ? 'http://localhost:3001/api'
     : 'https://ai-review-system-1.onrender.com/api');
-const MAX_W=65;
+let MAX_W=65;
 const ICONS={restaurant:'🍽️',hotel:'🏨',salon:'💇',bar:'🍸',hospital:'🏥',cafe:'☕',gym:'💪',spa:'🧖',retail:'🛍️',clothing:'👗',other:'⭐'};
 const MOODS={1:'Ugh, that bad? 😬',2:'Not great at all 😕',3:'It was just okay 😐',4:'Pretty good! 😊',5:'Absolutely loved it! 🤩'};
 
@@ -375,7 +375,7 @@ function getText(){return(S.mode==='direct'?document.getElementById('dta'):docum
 
 async function fetchBiz(id){
   pgbar(30);
-  try{const r=await fetch(`${API}/business/${id}`,{signal:AbortSignal.timeout(5000)});pgbar(70);if(!r.ok)throw new Error('Not found');return r.json();}
+  try{const r=await fetch(`${API}/business/${id}`,{signal:AbortSignal.timeout(5000)});pgbar(70);if(!r.ok)throw new Error('Not found');const d=await r.json();if(d.business?.reviewConfig?.maxWords)MAX_W=Math.min(80,Math.max(10,Number(d.business.reviewConfig.maxWords)));return d;}
   catch{pgbar(70);if(DEMOS[id])return DEMOS[id];throw new Error('Business not found');}
 }
 
