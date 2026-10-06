@@ -239,7 +239,10 @@ body{background:var(--bg);color:var(--w);font-family:var(--f);min-height:100vh;o
   <div id="ct" style="display:none"></div>
 </div>
 <script>
-const API=window.API_BASE||(location.hostname==='localhost'?'http://localhost:3001/api':'/api');
+const API = window.API_BASE ||
+  (location.hostname === 'localhost'
+    ? 'http://localhost:3001/api'
+    : 'https://ai-review-system-1.onrender.com/api');
 const MAX_W=65;
 const ICONS={restaurant:'🍽️',hotel:'🏨',salon:'💇',bar:'🍸',hospital:'🏥',cafe:'☕',gym:'💪',spa:'🧖',retail:'🛍️',clothing:'👗',other:'⭐'};
 const MOODS={1:'Ugh, that bad? 😬',2:'Not great at all 😕',3:'It was just okay 😐',4:'Pretty good! 😊',5:'Absolutely loved it! 🤩'};
