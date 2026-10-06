@@ -246,6 +246,10 @@ body{background:var(--bg);color:var(--white);font-family:var(--ff-body);-webkit-
         <div class="fg full"><label>Google Place ID *</label><input id="f-place" placeholder="ChIJN1t_tDeuEmsRUsoyG83frY4"/><div class="form-hint">Google Maps &rarr; Share &rarr; copy Place ID</div></div>
         <div class="fg"><label>Address</label><input id="f-addr" placeholder="123 Main St"/></div>
         <div class="fg"><label>Phone</label><input id="f-phone" placeholder="+91-98765-43210"/></div>
+        <div class="fg"><label>Country</label><input id="f-country" value="India"/></div>
+        <div class="fg"><label>State</label><input id="f-state" placeholder="Uttar Pradesh"/></div>
+        <div class="fg"><label>City</label><input id="f-city" placeholder="Lucknow"/></div>
+        <div class="fg"><label>Local Languages</label><input id="f-local" placeholder="English, Hindi, Hinglish"/></div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-outline" onclick="closeModal('addModal')">Cancel</button>
@@ -667,7 +671,11 @@ async function addBusiness() {
     imageUrl: document.getElementById("f-img").value.trim(),
     googlePlaceId: document.getElementById("f-place").value.trim(),
     address: document.getElementById("f-addr").value.trim(),
-    phone: document.getElementById("f-phone").value.trim()
+    phone: document.getElementById("f-phone").value.trim(),
+    country: document.getElementById("f-country").value.trim(),
+    state: document.getElementById("f-state").value.trim(),
+    city: document.getElementById("f-city").value.trim(),
+    localLanguages: document.getElementById("f-local").value.split(",").map(function(x){return x.trim()}).filter(Boolean)
   };
   if (!body.id||!body.name||!body.googlePlaceId) { toast("ID, Name, Place ID required","coral","✕"); return; }
   if (!/^[a-z0-9-]+$/.test(body.id)) { toast("ID mein sirf lowercase aur hyphens","coral","✕"); return; }
