@@ -308,8 +308,23 @@ How was the service? | Fast, Good, Slow"></textarea><div class="form-hint">These
 <div id="toast"><span id="t-icon"></span><span id="t-msg"></span></div>
 
 <script>
-var ADMIN_PASSWORD = "zuit@admin2024"; // ← CHANGE THIS
-var AUTH_KEY = "zuit_admin_v1";
+var AUTH_KEY = "zuit_admin_token_v2";
+var ADMIN_TOKEN = sessionStorage.getItem(AUTH_KEY) || "";
+
+async function adminFetch(url, options) {
+  options = options || {};
+  options.headers = Object.assign({"Content-Type":"application/json"}, options.headers || {});
+  if (ADMIN_TOKEN) options.headers.Authorization = "Bearer " + ADMIN_TOKEN;
+  var r = await fetch(url, options);
+  if (r.status === 401) {
+    ADMIN_TOKEN = "";
+    sessionStorage.removeItem(AUTH_KEY);
+  ADMIN_TOKEN = "";
+    document.getElementById("loginScreen").style.display = "flex";
+    document.getElementById("appShell").style.display = "none";
+  }
+  return r;
+}
 var API      = "https://ai-review-system-1.onrender.com/api";
 
 var businesses   = [];
@@ -320,15 +335,24 @@ var reviewFilter = "all";
 var ICONS = {restaurant:"🍽️",hotel:"🏨",salon:"💇",bar:"🍸",hospital:"🏥",cafe:"☕",gym:"💪",spa:"🧖",retail:"🛍️",other:"⭐"};
 
 /* AUTH */
-function doLogin() {
+async function doLogin() {
   var pw = document.getElementById("adminPw").value;
-  if (pw === ADMIN_PASSWORD) {
-    sessionStorage.setItem(AUTH_KEY, "1");
+  try {
+    var r = await adminFetch(API + "/admin/login", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({password:pw})
+    });
+    var d = await r.json();
+    if (!r.ok) throw new Error(d.error || "Login failed");
+    ADMIN_TOKEN = d.token;
+    sessionStorage.setItem(AUTH_KEY, ADMIN_TOKEN);
     document.getElementById("loginScreen").style.display = "none";
-    document.getElementById("appShell").style.display    = "block";
+    document.getElementById("appShell").style.display = "block";
     initDashboard();
-  } else {
+  } catch(e) {
     var err = document.getElementById("loginErr");
+    err.textContent = e.message || "Invalid password";
     err.style.display = "block";
     document.getElementById("adminPw").value = "";
     document.getElementById("adminPw").focus();
@@ -369,7 +393,7 @@ function goto(tab) {
 /* LOAD BUSINESSES */
 async function loadBiz() {
   try {
-    var r = await fetch(API + "/businesses");
+    var r = await adminFetch(API + "/businesses");
     var d = await r.json();
     businesses = d.businesses || [];
   } catch(e) { businesses = []; }
@@ -456,7 +480,7 @@ async function showQR(id, name) {
   document.getElementById("qrModal").classList.add("show");
   try {
     var base = window.location.origin;
-    var r = await fetch(API + "/qr/" + id + "?baseUrl=" + encodeURIComponent(base));
+    var r = await adminFetch(API + "/qr/" + id + "?baseUrl=" + encodeURIComponent(base));
     var d = await r.json();
     document.getElementById("qrImg").src = d.qrDataUrl;
     var autoUrl = d.reviewUrl + (d.reviewUrl.indexOf("?") > -1 ? "&" : "?") + "auto=1";
@@ -500,7 +524,7 @@ async function loadAnalytics(id, name, btn) {
   var el = document.getElementById("analyticsData");
   el.innerHTML = '<div class="card"><div class="skel" style="height:200px"></div></div>';
   try {
-    var r = await fetch(API + "/analytics/" + id);
+    var r = await adminFetch(API + "/analytics/" + id);
     var d = await r.json();
     var s = d.summary;
     if (!s) { el.innerHTML = '<div class="card">' + emptyHTML("No data yet","Koi review nahi aaya","") + "</div>"; return; }
@@ -610,7 +634,7 @@ function openRevModal(id) {
 async function deleteRev(id) {
   if (!confirm("Delete this review?")) return;
   try {
-    await fetch(API + "/reviews/" + id, { method: "DELETE" });
+    await adminFetch(API + "/reviews/" + id, { method: "DELETE" });
     toast("Deleted","teal","🗑");
     loadReviews(reviewFilter);
   } catch(e) { toast("Failed","coral","✕"); }
@@ -619,7 +643,7 @@ async function deleteRev(id) {
 async function clearAllRevs() {
   if (!confirm("Saare reviews delete karna chahte ho?")) return;
   try {
-    await fetch(API + "/reviews", { method: "DELETE" });
+    await adminFetch(API + "/reviews", { method: "DELETE" });
     toast("All cleared","teal","✓");
     loadReviews(reviewFilter);
   } catch(e) { toast("Failed","coral","✕"); }
@@ -648,7 +672,7 @@ var settingsBusinessId=null,settingsQuestions=[];
 function esc(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 async function openSettings(id){
  settingsBusinessId=id;document.getElementById("settingsModal").classList.add("show");document.getElementById("settingsBody").innerHTML='<div class="skel" style="height:500px"></div>';
- try{var r=await fetch(API+"/business/"+encodeURIComponent(id)+"/admin"),d=await r.json();if(!r.ok)throw new Error(d.error);renderSettings(d.business);}
+ try{var r=await adminFetch(API+"/business/"+encodeURIComponent(id)+"/admin"),d=await r.json();if(!r.ok)throw new Error(d.error);renderSettings(d.business);}
  catch(e){document.getElementById("settingsBody").innerHTML='<div class="empty"><div class="empty-title">Could not load</div><div class="empty-sub">'+esc(e.message)+'</div></div>';}
 }
 function renderSettings(b){
@@ -684,9 +708,9 @@ function collectSettingsQuestions(){return Array.from(document.querySelectorAll(
 async function saveSettings(){
  var langs=Array.from(document.querySelectorAll(".lang-row")).map(function(r){var label=r.querySelector(".sl-lang").value.trim();return {code:label.toLowerCase().replace(/\s+/g,"_"),label:label,weight:Number(r.querySelector(".sl-weight").value||0)}}).filter(function(x){return x.label});
  var body={name:document.getElementById("s-name").value.trim(),type:document.getElementById("s-type").value,description:document.getElementById("s-desc").value.trim(),businessProfile:{summary:document.getElementById("s-summary").value.trim(),services:document.getElementById("s-services").value.split(",").map(function(x){return x.trim()}).filter(Boolean),specialties:document.getElementById("s-specialties").value.split(",").map(function(x){return x.trim()}).filter(Boolean),amenities:document.getElementById("s-amenities").value.split(",").map(function(x){return x.trim()}).filter(Boolean),targetAudience:document.getElementById("s-audience").value.trim(),differentiators:document.getElementById("s-diff").value.split(",").map(function(x){return x.trim()}).filter(Boolean),reviewFocus:document.getElementById("s-focus").value.split(",").map(function(x){return x.trim()}).filter(Boolean),localContext:document.getElementById("s-context").value.trim(),avoidClaims:document.getElementById("s-avoid").value.split(",").map(function(x){return x.trim()}).filter(Boolean),aiInstructions:document.getElementById("s-ai-profile").value.trim()},country:document.getElementById("s-country").value.trim(),state:document.getElementById("s-state").value.trim(),city:document.getElementById("s-city").value.trim(),localLanguages:document.getElementById("s-local").value.split(",").map(function(x){return x.trim()}).filter(Boolean),googlePlaceId:document.getElementById("s-place").value.trim(),imageUrl:document.getElementById("s-img").value.trim(),languageConfig:{mode:document.getElementById("s-langmode").value,languages:langs},reviewConfig:{minWords:Number(document.getElementById("s-min").value||18),maxWords:Number(document.getElementById("s-max").value||45),tone:document.getElementById("s-tone").value.trim(),style:document.getElementById("s-style").value.trim(),emoji:document.getElementById("s-emoji").value==="true",customInstructions:document.getElementById("s-inst").value.trim()},subscription:{plan:document.getElementById("s-plan").value,status:document.getElementById("s-status").value,startDate:document.getElementById("s-start").value,endDate:document.getElementById("s-end").value,reviewLimit:Number(document.getElementById("s-limit").value||0),reviewsUsed:Number(document.getElementById("s-used").value||0)},questions:collectSettingsQuestions()};
- try{var r=await fetch(API+"/business/"+encodeURIComponent(settingsBusinessId),{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}),d=await r.json();if(!r.ok)throw new Error(d.error||"Save failed");toast("All settings saved ✓","teal","✓");closeModal("settingsModal");await loadBiz();goto("businesses");}catch(e){toast(e.message,"coral","✕");}
+ try{var r=await adminFetch(API+"/business/"+encodeURIComponent(settingsBusinessId),{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}),d=await r.json();if(!r.ok)throw new Error(d.error||"Save failed");toast("All settings saved ✓","teal","✓");closeModal("settingsModal");await loadBiz();goto("businesses");}catch(e){toast(e.message,"coral","✕");}
 }
-async function deleteBusiness(){if(!confirm("Delete business + reviews + analytics?"))return;try{var r=await fetch(API+"/business/"+encodeURIComponent(settingsBusinessId),{method:"DELETE"});if(!r.ok)throw new Error("Delete failed");toast("Business deleted","teal","🗑");closeModal("settingsModal");await loadBiz();goto("businesses");}catch(e){toast(e.message,"coral","✕");}}
+async function deleteBusiness(){if(!confirm("Delete business + reviews + analytics?"))return;try{var r=await adminFetch(API+"/business/"+encodeURIComponent(settingsBusinessId),{method:"DELETE"});if(!r.ok)throw new Error("Delete failed");toast("Business deleted","teal","🗑");closeModal("settingsModal");await loadBiz();goto("businesses");}catch(e){toast(e.message,"coral","✕");}}
 
 /* ADD BUSINESS */
 function openAddModal() { document.getElementById("addModal").classList.add("show"); }
@@ -715,7 +739,7 @@ async function addBusiness() {
   if (!body.id||!body.name||!body.googlePlaceId) { toast("ID, Name, Place ID required","coral","✕"); return; }
   if (!/^[a-z0-9-]+$/.test(body.id)) { toast("ID mein sirf lowercase aur hyphens","coral","✕"); return; }
   try {
-    var r = await fetch(API+"/business",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+    var r = await adminFetch(API+"/business",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
     var d = await r.json();
     if (!r.ok) { toast(d.error||"Failed","coral","✕"); return; }
     toast('"'+body.name+'" add ho gaya! 🎉',"teal","✓");
@@ -738,7 +762,7 @@ function initDashboard() {
 
 /* BOOT */
 window.addEventListener("DOMContentLoaded", function() {
-  if (sessionStorage.getItem(AUTH_KEY) === "1") {
+  if (sessionStorage.getItem(AUTH_KEY)) {
     document.getElementById("loginScreen").style.display = "none";
     document.getElementById("appShell").style.display    = "block";
     initDashboard();
