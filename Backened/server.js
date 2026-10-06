@@ -244,7 +244,8 @@ app.get('/api/business/:id/admin', async (req,res) => {
 // POST /api/generate-review — AI review generation
 app.post('/api/generate-review', reviewLimiter, async (req, res) => {
   try {
-    const { rating, businessType, businessName, selectedChips, businessId, language, languageConfig, reviewConfig } = req.body;
+    const { rating, businessType, businessName, selectedChips, businessId, language, reviewConfig } = req.body;
+    let languageConfig = req.body.languageConfig;
 
     if (!rating || !businessType || !businessName) {
       return res.status(400).json({ error: 'Missing required fields: rating, businessType, businessName' });
