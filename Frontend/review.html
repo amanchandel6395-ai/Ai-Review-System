@@ -387,11 +387,11 @@ async function generate(){
   const ans=getAns();
   try{
     const r=await fetch(`${API}/generate-review`,{method:'POST',headers:{'Content-Type':'application/json'},signal:AbortSignal.timeout(15000),body:JSON.stringify({rating:S.rating,businessType:S.biz.type,businessName:S.biz.name,businessId:S.biz.id,selectedChips:ans,language:getLanguage(),languageConfig:S.biz.languageConfig,reviewConfig:S.biz.reviewConfig,maxWords:MAX_W,humanStyle:true})});
-    const d=await r.json();if(!r.ok)throw new Error(d.error||'Failed');S.review=d.review;
+    const d=await r.json();if(!r.ok){const err=new Error(d.error||'Failed');err.status=r.status;throw err;}S.review=d.review;
   }catch(e){
     const net=e.name==='TypeError'||e.name==='AbortError';
     if(net){S.review=humanReview(S.rating,S.biz.type,S.biz.name,ans);toast('Review ready!','y','✨');}
-    else{S.review='';toast('Try again','y','⚠️');}
+    else{S.review='';toast(e.status===403?(e.message||'Subscription inactive'):'Try again','y','⚠️');}
   }finally{
     S.generating=false;setRB(revH());
     if(S.review){showCard('acCard');setTimeout(()=>document.getElementById('acCard')?.scrollIntoView({behavior:'smooth',block:'nearest'}),200);}
