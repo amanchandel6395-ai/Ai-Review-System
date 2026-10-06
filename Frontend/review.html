@@ -543,11 +543,29 @@ function renderActBtns(){
     </button>`;
 }
 
+function renderQuestions(){
+  const b=S.biz;
+  const wrap=document.getElementById('qaInner');
+  const card=document.getElementById('qaCard');
+  if(!wrap||!card)return;
+  const qs=(Array.isArray(b.questions)?b.questions:[]).filter(q=>q && q.enabled!==false).sort((a,b)=>(a.order??0)-(b.order??0));
+  if(!qs.length){ card.style.display='block'; wrap.innerHTML='<div style="padding:12px 0;color:#777">No custom questions configured for this business.</div>'; return; }
+  wrap.innerHTML=qs.map((q,i)=>{
+    const id=String(q.id||('q'+i));
+    const opts=Array.isArray(q.options)?q.options:[];
+    const type=q.type||'single';
+    if(type==='text') return '<div class="qrow"><div class="qtext">'+esc(q.text||'')+'</div><textarea class="dta" placeholder="Type your answer..." oninput="setTextAnswer(\''+id+'\',this.value)"></textarea></div>';
+    if(type==='yesno') return '<div class="qrow"><div class="qtext">'+esc(q.text||'')+'</div><div class="chips">'+['Yes','No'].map(v=>'<button class="chip" onclick="toggleChip(\''+id+'\',\''+v+'\',this)">'+v+'</button>').join('')+'</div></div>';
+    if(type==='rating') return '<div class="qrow"><div class="qtext">'+esc(q.text||'')+'</div><div class="chips">'+[1,2,3,4,5].map(v=>'<button class="chip" onclick="toggleChip(\''+id+'\',\''+v+'\',this)">'+v+'★</button>').join('')+'</div></div>';
+    return '<div class="qrow"><div class="qtext">'+esc(q.text||'')+'</div><div class="chips">'+opts.map(v=>'<button class="chip" onclick="toggleChip(\''+id+'\',\''+String(v).replace(/'/g,"&#39;")+'\',this,'+(type==='multi'?'true':'false')+')">'+esc(v)+'</button>').join('')+'</div></div>';
+  }).join('');
+}
 function render(){
   const b=S.biz;document.title='Review — '+b.name+' | Zuit';
   pgbar(100);setTimeout(()=>pgbar(0),600);
   document.getElementById('skel').style.display='none';
   const ct=document.getElementById('ct');ct.style.display='block';
+  // Questions come from the live API response and are rendered after the business shell is mounted.
   ct.innerHTML=`
     <div class="hero">
       <img src="${b.imageUrl}" alt="${b.name}" onload="this.classList.add('ok')"/>
@@ -597,6 +615,8 @@ function render(){
     </div>
     <div class="pwrd">Powered by <span>Zuit</span> · AI Review Platform</div>`;
 
+  renderQuestions();
+
   const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');obs.unobserve(e.target);}});},{threshold:.08});
   document.querySelectorAll('.card').forEach(c=>{if(c.style.display!=='none')obs.observe(c);});
 }
@@ -610,7 +630,7 @@ function renderErr(msg){
 (async()=>{
   const id=bizId();
   if(!id){renderErr('No business ID found in URL.');return;}
-  try{pgbar(15);const d=await fetchBiz(id);S.biz=d.business;render();}
+  try{pgbar(15);const d=await fetchBiz(id);S.biz=Object.assign({},d.business,{questions:Array.isArray(d.questions)?d.questions:[]});render();}
   catch(e){renderErr(e.message||'Could not load.');}
 })();
 </script>
