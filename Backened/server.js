@@ -12,6 +12,64 @@ const path         = require('path');
 const { Business, Analytics, Review, SEED_BUSINESSES } = require('./data/businesses');
 const { QUESTIONS } = require('./config/questions');
 
+const DEFAULT_LANGUAGES = {
+  India: [
+    { code: 'en', label: 'English', weight: 100 },
+    { code: 'hi', label: 'Hindi', weight: 0 },
+    { code: 'hinglish', label: 'Hinglish', weight: 0 },
+    { code: 'bn', label: 'Bengali', weight: 0 },
+    { code: 'ta', label: 'Tamil', weight: 0 },
+    { code: 'te', label: 'Telugu', weight: 0 },
+    { code: 'kn', label: 'Kannada', weight: 0 },
+    { code: 'ml', label: 'Malayalam', weight: 0 },
+    { code: 'mr', label: 'Marathi', weight: 0 },
+    { code: 'gu', label: 'Gujarati', weight: 0 },
+    { code: 'pa', label: 'Punjabi', weight: 0 },
+    { code: 'od', label: 'Odia', weight: 0 },
+    { code: 'bho', label: 'Bhojpuri', weight: 0 }
+  ]
+};
+
+function defaultQuestions(type) {
+  const qs = QUESTIONS[type] || QUESTIONS.other;
+  return (qs || []).map((q, i) => ({
+    id: q.id || 'q' + (i + 1), text: q.q || q.question || '', type: 'single',
+    required: false, enabled: true, order: i,
+    options: (q.chips || []).map(x => ({ label: x, value: x, sentiment: '' }))
+  }));
+}
+
+function normalizeBusiness(b) {
+  const obj = b.toObject ? b.toObject() : b;
+  if (!obj.localLanguages?.length) {
+    if (obj.city === 'Bengaluru') obj.localLanguages = ['English', 'Kannada'];
+    else if (obj.city === 'Chennai') obj.localLanguages = ['English', 'Tamil'];
+    else if (obj.city === 'Hyderabad') obj.localLanguages = ['English', 'Telugu'];
+    else if (obj.city === 'Kolkata') obj.localLanguages = ['English', 'Bengali'];
+    else if (obj.city === 'Lucknow' || obj.state === 'Uttar Pradesh') obj.localLanguages = ['English', 'Hindi', 'Hinglish'];
+    else obj.localLanguages = ['English'];
+  }
+  if (!obj.languageConfig?.languages?.length) obj.languageConfig = { mode: 'fixed', languages: obj.localLanguages.map((x, i) => ({ code: x.toLowerCase(), label: x, weight: i === 0 ? 100 : 0 })) };
+  if (!obj.reviewConfig) obj.reviewConfig = {};
+  if (!obj.questions?.length) obj.questions = defaultQuestions(obj.type);
+  if (!obj.subscription) obj.subscription = { plan: 'trial', status: 'trial', reviewLimit: 1000, reviewsUsed: 0 };
+  return obj;
+}
+
+function isSubscriptionActive(b) {
+  const s = b.subscription || {};
+  if (s.status === 'suspended' || s.status === 'expired') return false;
+  if (s.endDate && new Date(s.endDate) < new Date()) return false;
+  if (Number.isFinite(s.reviewLimit) && s.reviewLimit >= 0 && (s.reviewsUsed || 0) >= s.reviewLimit) return false;
+  return true;
+}
+
+function languageInstruction(cfg, business) {
+  const langs = cfg?.languages?.length ? cfg.languages : [{ label: 'English', weight: 100 }];
+  const list = langs.map(x => `${x.label || x.code} (${x.weight ?? 0}%)`).join(', ');
+  return `Write naturally in the configured language mix: ${list}. If Hinglish is configured, mix simple everyday Hindi and English as a real local customer would. Do not force a translation or unnatural language switching.`;
+}
+
 const app  = express();
 const PORT = process.env.PORT || 3001;
 
@@ -79,22 +137,17 @@ app.get('/api/business/:id', async (req, res) => {
       return res.status(404).json({ error: 'Business not found' });
     }
 
-    const questions = QUESTIONS[business.type] || QUESTIONS.other;
-
+    const data = normalizeBusiness(business);
     res.json({
       business: {
-        id:            business._id,
-        name:          business.name,
-        type:          business.type,
-        description:   business.description,
-        imageUrl:      business.imageUrl,
-        googlePlaceId: business.googlePlaceId,
-        address:       business.address,
-        phone:         business.phone,
-        rating:        business.rating,
-        reviewCount:   business.reviewCount
+        id: data._id, name: data.name, type: data.type, description: data.description,
+        imageUrl: data.imageUrl, googlePlaceId: data.googlePlaceId, address: data.address,
+        phone: data.phone, rating: data.rating, reviewCount: data.reviewCount,
+        country: data.country, state: data.state, city: data.city,
+        localLanguages: data.localLanguages, languageConfig: data.languageConfig,
+        reviewConfig: data.reviewConfig, subscription: data.subscription
       },
-      questions
+      questions: data.questions
     });
   } catch (err) {
     console.error('GET /business/:id error:', err);
@@ -115,11 +168,9 @@ app.get('/api/businesses', async (req, res) => {
 // POST /api/business — create new business (admin)
 app.post('/api/business', async (req, res) => {
   try {
-    const { id, name, type, description, imageUrl, googlePlaceId, address, phone } = req.body;
-    if (!id || !name || !type || !googlePlaceId) {
-      return res.status(400).json({ error: 'Missing required fields: id, name, type, googlePlaceId' });
-    }
-    const business = new Business({ _id: id, name, type, description, imageUrl, googlePlaceId, address, phone });
+    const { id, name, type, description, imageUrl, googlePlaceId, address, phone, country, state, city, localLanguages, languageConfig, reviewConfig, questions, subscription } = req.body;
+    if (!id || !name || !type) return res.status(400).json({ error: 'Missing required fields: id, name, type' });
+    const business = new Business({ _id: id, name, type, description, imageUrl, googlePlaceId, address, phone, country, state, city, localLanguages, languageConfig, reviewConfig, questions, subscription });
     await business.save();
     res.status(201).json({ success: true, business });
   } catch (err) {
@@ -128,10 +179,40 @@ app.post('/api/business', async (req, res) => {
   }
 });
 
+// PUT /api/business/:id — admin update all business settings
+app.put('/api/business/:id', async (req, res) => {
+  try {
+    const allowed = ['name','type','description','imageUrl','googlePlaceId','address','phone','country','state','city','localLanguages','languageConfig','reviewConfig','questions','subscription'];
+    const patch = {};
+    allowed.forEach(k => { if (req.body[k] !== undefined) patch[k] = req.body[k]; });
+    if (patch.questions) patch.questions = patch.questions.map((q,i) => ({ ...q, order: q.order ?? i }));
+    const business = await Business.findByIdAndUpdate(req.params.id, patch, { new:true, runValidators:true });
+    if (!business) return res.status(404).json({ error:'Business not found' });
+    res.json({ success:true, business: normalizeBusiness(business) });
+  } catch (err) { console.error('PUT /business error:', err); res.status(400).json({ error: err.message || 'Failed to update business' }); }
+});
+
+// DELETE /api/business/:id — admin delete business
+app.delete('/api/business/:id', async (req, res) => {
+  try {
+    const business = await Business.findByIdAndDelete(req.params.id);
+    if (!business) return res.status(404).json({ error:'Business not found' });
+    await Analytics.deleteMany({ businessId:req.params.id });
+    await Review.deleteMany({ businessId:req.params.id });
+    res.json({ success:true });
+  } catch (err) { res.status(500).json({ error:'Failed to delete business' }); }
+});
+
+// GET /api/business/:id/admin — full editable configuration
+app.get('/api/business/:id/admin', async (req,res) => {
+  try { const b=await Business.findById(req.params.id); if(!b)return res.status(404).json({error:'Business not found'}); res.json({business:normalizeBusiness(b)}); }
+  catch(e){res.status(500).json({error:'Failed to fetch business'});}
+});
+
 // POST /api/generate-review — AI review generation
 app.post('/api/generate-review', reviewLimiter, async (req, res) => {
   try {
-    const { rating, businessType, businessName, selectedChips } = req.body;
+    const { rating, businessType, businessName, selectedChips, businessId, language, languageConfig, reviewConfig } = req.body;
 
     if (!rating || !businessType || !businessName) {
       return res.status(400).json({ error: 'Missing required fields: rating, businessType, businessName' });
@@ -150,34 +231,32 @@ app.post('/api/generate-review', reviewLimiter, async (req, res) => {
       1: 'critically honest and disappointed, but still constructive and respectful'
     };
 
-    const chipsContext = selectedChips && selectedChips.length > 0
-      ? `The customer specifically experienced/noted: ${selectedChips.join(', ')}.`
-      : '';
-
+    let cfg = reviewConfig || {};
+    let customerLang = language || '';
+    if (businessId) { const db = await Business.findById(businessId); if (db) { cfg = db.reviewConfig || cfg; customerLang = language || ''; } }
+    const chipsContext = selectedChips && selectedChips.length > 0 ? `The customer specifically experienced/noted: ${selectedChips.join(', ')}.` : '';
+    const minWords = Math.max(8, Number(cfg.minWords || 18));
+    const maxWords = Math.min(80, Math.max(minWords, Number(cfg.maxWords || 45)));
     const prompt = `
-You are a genuine customer writing a short Google review.
-
+You are a genuine customer writing a short public review for a real business.
 Business: "${businessName}"
 Type: ${businessType}
 Star rating: ${rating}/5
-Tone: ${toneMap[rating] || toneMap[3]}
+Tone: ${cfg.tone || toneMap[rating] || toneMap[3]}
+Style: ${cfg.style || 'short, everyday customer review'}
+Language: ${customerLang || 'use the configured language mix'}
+${languageInstruction(languageConfig, null)}
 ${chipsContext}
+Admin instructions: ${cfg.customInstructions || 'None'}
 
-Write a natural, human-like review in 2–3 sentences. It should:
-- Sound like a real person wrote it (not AI)
-- Reference the star rating's sentiment naturally
-- Include specific details from the context chips if provided
-- NOT use phrases like "I must say", "I have to say", "As a customer", "I recently visited"
-- NOT start with the business name
-- Be ready to post directly on Google Maps
-
-Output ONLY the review text. No quotes, no preamble.
+Write ONLY ${minWords}-${maxWords} words, preferably 2 short sentences. Sound like a normal customer, not a marketer or AI. Use only details supplied above; never invent food, staff, facilities, prices, events, or other experiences. Do not start with the business name. Avoid generic AI phrases and excessive punctuation. Emojis: ${cfg.emoji ? 'allowed, at most one' : 'do not use'}.
+Output ONLY the review text.
 `.trim();
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',    
-      max_tokens:  150,
-      temperature: 0.85,
+      max_tokens:  120,
+      temperature: Number(cfg.temperature || 0.75),
       messages: [
         { role: 'system', content: 'You write authentic, concise Google reviews for real customers.' },
         { role: 'user',   content: prompt }
