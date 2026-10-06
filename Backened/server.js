@@ -8,6 +8,7 @@ const mongoose     = require('mongoose');
 const QRCode       = require('qrcode');
 const OpenAI       = require('openai');
 const path         = require('path');
+const crypto       = require('crypto');
 
 const { Business, Analytics, Review, SEED_BUSINESSES } = require('./data/businesses');
 const { QUESTIONS } = require('./config/questions');
@@ -107,6 +108,36 @@ function languageInstruction(cfg, business) {
   return `Write naturally in the configured language mix: ${list}. If Hinglish is configured, mix simple everyday Hindi and English as a real local customer would. Do not force a translation or unnatural language switching.`;
 }
 
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
+const ADMIN_TOKEN_SECRET = process.env.ADMIN_TOKEN_SECRET || '';
+
+function signAdminToken(payload) {
+  const body = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  const sig = crypto.createHmac('sha256', ADMIN_TOKEN_SECRET).update(body).digest('base64url');
+  return body + '.' + sig;
+}
+
+function verifyAdminToken(token) {
+  if (!token || !ADMIN_TOKEN_SECRET) return false;
+  const parts = token.split('.');
+  if (parts.length !== 2) return false;
+  const body = parts[0], signature = parts[1];
+  const expected = crypto.createHmac('sha256', ADMIN_TOKEN_SECRET).update(body).digest('base64url');
+  if (signature.length !== expected.length) return false;
+  if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) return false;
+  try {
+    const payload = JSON.parse(Buffer.from(body, 'base64url').toString('utf8'));
+    return payload.role === 'admin' && Number(payload.exp) > Date.now();
+  } catch { return false; }
+}
+
+function requireAdmin(req, res, next) {
+  const header = req.headers.authorization || '';
+  const token = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
+  if (!verifyAdminToken(token)) return res.status(401).json({ error: 'Admin authentication required' });
+  next();
+}
+
 const app  = express();
 const PORT = process.env.PORT || 3001;
 
@@ -159,9 +190,30 @@ const reviewLimiter = rateLimit({
   message: { error: 'Review generation limit reached. Try again in 5 minutes.' }
 });
 
+const adminLoginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 8,
+  standardHeaders: true,
+  message: { error: 'Too many login attempts. Try again later.' }
+});
+
 app.use('/api/', generalLimiter);
 
 // ── Routes ───────────────────────────────────────────────────────────────────
+
+app.post('/api/admin/login', adminLoginLimiter, (req, res) => {
+  if (!ADMIN_PASSWORD || !ADMIN_TOKEN_SECRET) {
+    return res.status(503).json({ error: 'Admin authentication is not configured on the server.' });
+  }
+  const password = String(req.body?.password || '');
+  const expected = Buffer.from(ADMIN_PASSWORD);
+  const supplied = Buffer.from(password);
+  const valid = supplied.length === expected.length && crypto.timingSafeEqual(supplied, expected);
+  if (!valid) return res.status(401).json({ error: 'Invalid admin password' });
+  const now = Date.now();
+  const token = signAdminToken({ role: 'admin', iat: now, exp: now + 12 * 60 * 60 * 1000 });
+  res.json({ token, expiresAt: now + 12 * 60 * 60 * 1000 });
+});
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -184,7 +236,7 @@ app.get('/api/business/:id', async (req, res) => {
         phone: data.phone, rating: data.rating, reviewCount: data.reviewCount,
         country: data.country, state: data.state, city: data.city,
         localLanguages: data.localLanguages, languageConfig: data.languageConfig,
-        reviewConfig: data.reviewConfig, businessProfile: data.businessProfile, subscription: data.subscription
+        reviewConfig: data.reviewConfig, businessProfile: data.businessProfile
       },
       questions: data.questions
     });
@@ -195,7 +247,7 @@ app.get('/api/business/:id', async (req, res) => {
 });
 
 // GET /api/businesses — list all businesses (admin / QR generator)
-app.get('/api/businesses', async (req, res) => {
+app.get('/api/businesses', requireAdmin, async (req, res) => {
   try {
     const businesses = await Business.find({}, '_id name type rating reviewCount');
     res.json({ businesses });
@@ -205,7 +257,7 @@ app.get('/api/businesses', async (req, res) => {
 });
 
 // POST /api/business — create new business (admin)
-app.post('/api/business', async (req, res) => {
+app.post('/api/business', requireAdmin, async (req, res) => {
   try {
     const { id, name, type, description, imageUrl, googlePlaceId, address, phone, country, state, city, localLanguages, businessProfile, languageConfig, reviewConfig, questions, subscription } = req.body;
     if (!id || !name || !type) return res.status(400).json({ error: 'Missing required fields: id, name, type' });
@@ -219,7 +271,7 @@ app.post('/api/business', async (req, res) => {
 });
 
 // PUT /api/business/:id — admin update all business settings
-app.put('/api/business/:id', async (req, res) => {
+app.put('/api/business/:id', requireAdmin, async (req, res) => {
   try {
     const allowed = ['name','type','description','imageUrl','googlePlaceId','address','phone','country','state','city','localLanguages','businessProfile','languageConfig','reviewConfig','questions','subscription'];
     const patch = {};
@@ -232,7 +284,7 @@ app.put('/api/business/:id', async (req, res) => {
 });
 
 // DELETE /api/business/:id — admin delete business
-app.delete('/api/business/:id', async (req, res) => {
+app.delete('/api/business/:id', requireAdmin, async (req, res) => {
   try {
     const business = await Business.findByIdAndDelete(req.params.id);
     if (!business) return res.status(404).json({ error:'Business not found' });
@@ -243,7 +295,7 @@ app.delete('/api/business/:id', async (req, res) => {
 });
 
 // GET /api/business/:id/admin — full editable configuration
-app.get('/api/business/:id/admin', async (req,res) => {
+app.get('/api/business/:id/admin', requireAdmin, async (req,res) => {
   try { const b=await Business.findById(req.params.id); if(!b)return res.status(404).json({error:'Business not found'}); res.json({business:normalizeBusiness(b)}); }
   catch(e){res.status(500).json({error:'Failed to fetch business'});}
 });
@@ -277,6 +329,26 @@ app.post('/api/generate-review', reviewLimiter, async (req, res) => {
       dbBusiness = await Business.findById(businessId);
       if (!dbBusiness) return res.status(404).json({ error: 'Business not found' });
       if (!isSubscriptionActive(dbBusiness)) return res.status(403).json({ error: 'Business subscription is inactive or review limit has been reached.' });
+      const reserved = await Business.findOneAndUpdate(
+        {
+          _id: businessId,
+          'subscription.status': { $nin: ['suspended', 'expired'] },
+          $or: [
+            { 'subscription.endDate': { $exists: false } },
+            { 'subscription.endDate': { $gte: new Date() } }
+          ],
+          $expr: {
+            $or: [
+              { $lt: [{ $ifNull: ['$subscription.reviewsUsed', 0] }, { $ifNull: ['$subscription.reviewLimit', 1000] }] },
+              { $eq: [{ $ifNull: ['$subscription.reviewLimit', 1000] }, -1] }
+            ]
+          }
+        },
+        { $inc: { 'subscription.reviewsUsed': 1 } },
+        { new: true }
+      );
+      if (!reserved) return res.status(403).json({ error: 'Business subscription is inactive or review limit has been reached.' });
+      dbBusiness = reserved;
       const data = normalizeBusiness(dbBusiness);
       cfg = data.reviewConfig || cfg;
       languageConfig = languageConfig || data.languageConfig;
@@ -354,10 +426,10 @@ STRICT RULES
     const review = completion.choices[0]?.message?.content?.trim();
     if (!review) throw new Error('Empty AI response');
 
-    if (dbBusiness) await Business.findByIdAndUpdate(dbBusiness._id, { $inc: { 'subscription.reviewsUsed': 1 } });
     res.json({ review, tokensUsed: completion.usage?.total_tokens });
 
   } catch (err) {
+    if (dbBusiness) await Business.findByIdAndUpdate(dbBusiness._id, { $inc: { 'subscription.reviewsUsed': -1 } }).catch(() => {});
     console.error('POST /generate-review error:', err);
     if (err?.status === 401) return res.status(401).json({ error: 'Invalid OpenAI API key' });
     if (err?.status === 429) return res.status(429).json({ error: 'AI rate limit reached. Try again shortly.' });
@@ -392,7 +464,7 @@ app.post('/api/save-analytics', async (req, res) => {
 });
 
 // GET /api/analytics/:businessId — basic analytics for a business
-app.get('/api/analytics/:businessId', async (req, res) => {
+app.get('/api/analytics/:businessId', requireAdmin, async (req, res) => {
   try {
     const entries = await Analytics.find({ businessId: req.params.businessId });
     if (!entries.length) return res.json({ entries: [], summary: null });
@@ -420,7 +492,7 @@ app.get('/api/analytics/:businessId', async (req, res) => {
 });
 
 // GET /api/qr/:businessId — generate QR code as PNG data URL
-app.get('/api/qr/:businessId', async (req, res) => {
+app.get('/api/qr/:businessId', requireAdmin, async (req, res) => {
   try {
     const { businessId } = req.params;
     const baseUrl = req.query.baseUrl || `${req.protocol}://${req.get('host')}`;
@@ -440,7 +512,7 @@ app.get('/api/qr/:businessId', async (req, res) => {
 });
 
 // GET /api/qr/:businessId/svg — SVG QR for print
-app.get('/api/qr/:businessId/svg', async (req, res) => {
+app.get('/api/qr/:businessId/svg', requireAdmin, async (req, res) => {
   try {
     const { businessId } = req.params;
     const baseUrl   = req.query.baseUrl || `${req.protocol}://${req.get('host')}`;
@@ -490,7 +562,7 @@ app.post('/api/save-review', async (req, res) => {
 
 // GET /api/reviews — Admin: get all reviews with optional filters
 // Query params: type=positive|negative, businessId=xxx, limit=50
-app.get('/api/reviews', async (req, res) => {
+app.get('/api/reviews', requireAdmin, async (req, res) => {
   try {
     const filter = {};
     if (req.query.type)       filter.type       = req.query.type;
@@ -517,7 +589,7 @@ app.get('/api/reviews', async (req, res) => {
 });
 
 // DELETE /api/reviews/:id — Admin: delete single review
-app.delete('/api/reviews/:id', async (req, res) => {
+app.delete('/api/reviews/:id', requireAdmin, async (req, res) => {
   try {
     const result = await Review.findByIdAndDelete(req.params.id);
     if (!result) return res.status(404).json({ error: 'Review not found' });
@@ -528,7 +600,7 @@ app.delete('/api/reviews/:id', async (req, res) => {
 });
 
 // DELETE /api/reviews — Admin: delete ALL reviews (use with caution)
-app.delete('/api/reviews', async (req, res) => {
+app.delete('/api/reviews', requireAdmin, async (req, res) => {
   try {
     const result = await Review.deleteMany({});
     res.json({ success: true, deleted: result.deletedCount });
