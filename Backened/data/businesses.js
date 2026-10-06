@@ -38,6 +38,20 @@ const BusinessSchema = new mongoose.Schema({
   city:         { type: String, default: '' },
   localLanguages: { type: [String], default: [] },
 
+  // Detailed business knowledge used by Zuit AI to write context-aware reviews.
+  businessProfile: {
+    summary: { type: String, default: '' },
+    services: { type: [String], default: [] },
+    specialties: { type: [String], default: [] },
+    amenities: { type: [String], default: [] },
+    targetAudience: { type: String, default: '' },
+    differentiators: { type: [String], default: [] },
+    reviewFocus: { type: [String], default: [] },
+    localContext: { type: String, default: '' },
+    avoidClaims: { type: [String], default: [] },
+    aiInstructions: { type: String, default: '' }
+  },
+
   languageConfig: {
     mode: { type: String, enum: ['fixed', 'weighted', 'random', 'customer'], default: 'fixed' },
     languages: [{
@@ -99,6 +113,7 @@ const SEED_BUSINESSES = [
     address: '12 Hazratganj, Lucknow, UP 226001',
     phone: '+91-522-4001234',
     country: 'India', state: 'Uttar Pradesh', city: 'Lucknow', localLanguages: ['English','Hindi','Hinglish'],
+    businessProfile: { summary: 'North Indian restaurant serving dine-in meals and traditional Indian cuisine.', services: ['Dine-in', 'Food service'], specialties: ['North Indian cuisine'], amenities: ['Dine-in seating'], targetAudience: 'Local diners, families and food lovers', differentiators: ['Traditional spices and North Indian flavours'], reviewFocus: ['food quality', 'taste', 'service', 'ambience', 'value'], localContext: 'Lucknow, Uttar Pradesh', avoidClaims: [], aiInstructions: '' },
     rating: 4.7,
     reviewCount: 312
   },
@@ -112,6 +127,7 @@ const SEED_BUSINESSES = [
     address: '1 Taj Road, New Delhi, 110001',
     phone: '+91-11-66510100',
     country: 'India', state: 'Delhi', city: 'New Delhi', localLanguages: ['English','Hindi','Hinglish'],
+    businessProfile: { summary: 'Luxury hotel offering rooms, hospitality, dining and guest amenities.', services: ['Hotel stay', 'Guest services'], specialties: ['Luxury hospitality'], amenities: ['Hotel rooms', 'Dining', 'Guest amenities'], targetAudience: 'Business and leisure travellers', differentiators: ['Luxury hospitality and heritage setting'], reviewFocus: ['room', 'cleanliness', 'staff', 'facilities', 'location'], localContext: 'New Delhi, Delhi', avoidClaims: [], aiInstructions: '' },
     rating: 4.9,
     reviewCount: 1842
   },
@@ -125,6 +141,7 @@ const SEED_BUSINESSES = [
     address: '45 MG Road, Bengaluru, KA 560001',
     phone: '+91-80-41234567',
     country: 'India', state: 'Karnataka', city: 'Bengaluru', localLanguages: ['English','Kannada'],
+    businessProfile: { summary: 'Premium salon providing hair, beauty and personal care services.', services: ['Hair styling', 'Hair colouring', 'Skin treatments'], specialties: ['Hair and beauty care'], amenities: ['Salon seating'], targetAudience: 'Beauty and personal-care customers', differentiators: ['Premium styling and beauty services'], reviewFocus: ['service', 'staff', 'hygiene', 'results', 'value'], localContext: 'Bengaluru, Karnataka', avoidClaims: [], aiInstructions: '' },
     rating: 4.6,
     reviewCount: 428
   },
@@ -138,6 +155,7 @@ const SEED_BUSINESSES = [
     address: '7 Bandra West, Mumbai, MH 400050',
     phone: '+91-22-26432100',
     country: 'India', state: 'Maharashtra', city: 'Mumbai', localLanguages: ['English','Hindi','Marathi','Hinglish'],
+    businessProfile: { summary: 'Bar and nightlife venue offering drinks, ambience and entertainment.', services: ['Drinks service', 'Dining', 'Nightlife'], specialties: ['Cocktails and nightlife'], amenities: ['Bar seating', 'Music'], targetAudience: 'Adults seeking drinks and nightlife', differentiators: ['Cocktails and lively atmosphere'], reviewFocus: ['drinks', 'ambience', 'music', 'service', 'crowd'], localContext: 'Mumbai, Maharashtra', avoidClaims: [], aiInstructions: '' },
     rating: 4.5,
     reviewCount: 876
   },
@@ -151,6 +169,7 @@ const SEED_BUSINESSES = [
     address: 'Jubilee Hills, Hyderabad, TS 500033',
     phone: '+91-40-23607777',
     country: 'India', state: 'Telangana', city: 'Hyderabad', localLanguages: ['English','Telugu','Hindi'],
+    businessProfile: { summary: 'Multi-speciality hospital providing medical consultation, diagnostics and patient care.', services: ['Medical consultation', 'Diagnostics', 'Patient care'], specialties: ['Multi-speciality healthcare'], amenities: ['Hospital facilities'], targetAudience: 'Patients and families', differentiators: ['Multi-speciality medical care'], reviewFocus: ['doctor', 'staff', 'waiting time', 'cleanliness', 'care'], localContext: 'Hyderabad, Telangana', avoidClaims: ['Do not make medical outcome or cure claims not supplied by the customer'], aiInstructions: 'Keep healthcare reviews focused on the patient experience and avoid inventing medical outcomes.' },
     rating: 4.8,
     reviewCount: 2140
   },
@@ -164,6 +183,7 @@ const SEED_BUSINESSES = [
     address: '22 Koramangala, Bengaluru, KA 560034',
     phone: '+91-80-25678901',
     country: 'India', state: 'Karnataka', city: 'Bengaluru', localLanguages: ['English','Kannada'],
+    businessProfile: { summary: 'Cafe serving specialty coffee, pastries and a relaxed workspace-friendly experience.', services: ['Coffee', 'Food and pastries', 'Cafe seating'], specialties: ['Specialty coffee'], amenities: ['Workspace seating'], targetAudience: 'Coffee lovers, students and professionals', differentiators: ['Specialty coffee and cozy workspace vibe'], reviewFocus: ['coffee', 'food', 'service', 'ambience', 'workspace'], localContext: 'Bengaluru, Karnataka', avoidClaims: [], aiInstructions: '' },
     rating: 4.7,
     reviewCount: 659
   }
