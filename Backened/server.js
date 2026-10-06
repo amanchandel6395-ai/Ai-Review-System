@@ -235,7 +235,8 @@ app.get('/api/business/:id', async (req, res) => {
         imageUrl: data.imageUrl, googlePlaceId: data.googlePlaceId, address: data.address,
         phone: data.phone, rating: data.rating, reviewCount: data.reviewCount,
         country: data.country, state: data.state, city: data.city,
-        localLanguages: data.localLanguages, languageConfig: data.languageConfig
+        localLanguages: data.localLanguages, languageConfig: data.languageConfig,
+        reviewConfig: { minWords: data.reviewConfig?.minWords, maxWords: data.reviewConfig?.maxWords }
       },
       questions: data.questions
     });
