@@ -108,7 +108,9 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 // ── MongoDB ──────────────────────────────────────────────────────────────────
-mongoose.connect(process.env.MONGO_URI)
+const MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI;
+if (!MONGO_URI) console.warn('⚠️ MONGO_URI/MONGODB_URI is not configured');
+mongoose.connect(MONGO_URI)
   .then(async () => {
     console.log('✅ MongoDB Connected');
     await seedDatabase();
