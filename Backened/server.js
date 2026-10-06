@@ -233,7 +233,16 @@ app.post('/api/generate-review', reviewLimiter, async (req, res) => {
 
     let cfg = reviewConfig || {};
     let customerLang = language || '';
-    if (businessId) { const db = await Business.findById(businessId); if (db) { cfg = db.reviewConfig || cfg; customerLang = language || ''; } }
+    let dbBusiness = null;
+    if (businessId) {
+      dbBusiness = await Business.findById(businessId);
+      if (!dbBusiness) return res.status(404).json({ error: 'Business not found' });
+      if (!isSubscriptionActive(dbBusiness)) return res.status(403).json({ error: 'Business subscription is inactive or review limit has been reached.' });
+      const data = normalizeBusiness(dbBusiness);
+      cfg = data.reviewConfig || cfg;
+      customerLang = language || data.localLanguages?.join(' + ') || 'English';
+      languageConfig = languageConfig || data.languageConfig;
+    }
     const chipsContext = selectedChips && selectedChips.length > 0 ? `The customer specifically experienced/noted: ${selectedChips.join(', ')}.` : '';
     const minWords = Math.max(8, Number(cfg.minWords || 18));
     const maxWords = Math.min(80, Math.max(minWords, Number(cfg.maxWords || 45)));
@@ -266,6 +275,7 @@ Output ONLY the review text.
     const review = completion.choices[0]?.message?.content?.trim();
     if (!review) throw new Error('Empty AI response');
 
+    if (dbBusiness) await Business.findByIdAndUpdate(dbBusiness._id, { $inc: { 'subscription.reviewsUsed': 1 } });
     res.json({ review, tokensUsed: completion.usage?.total_tokens });
 
   } catch (err) {
