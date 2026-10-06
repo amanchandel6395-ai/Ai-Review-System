@@ -98,6 +98,7 @@ const SEED_BUSINESSES = [
     googlePlaceId: 'ChIJN1t_tDeuEmsRUsoyG83frY4',
     address: '12 Hazratganj, Lucknow, UP 226001',
     phone: '+91-522-4001234',
+    country: 'India', state: 'Uttar Pradesh', city: 'Lucknow', localLanguages: ['English','Hindi','Hinglish'],
     rating: 4.7,
     reviewCount: 312
   },
@@ -110,6 +111,7 @@ const SEED_BUSINESSES = [
     googlePlaceId: 'ChIJN1t_tDeuEmsRUsoyG83frY5',
     address: '1 Taj Road, New Delhi, 110001',
     phone: '+91-11-66510100',
+    country: 'India', state: 'Delhi', city: 'New Delhi', localLanguages: ['English','Hindi','Hinglish'],
     rating: 4.9,
     reviewCount: 1842
   },
@@ -122,6 +124,7 @@ const SEED_BUSINESSES = [
     googlePlaceId: 'ChIJN1t_tDeuEmsRUsoyG83frY6',
     address: '45 MG Road, Bengaluru, KA 560001',
     phone: '+91-80-41234567',
+    country: 'India', state: 'Karnataka', city: 'Bengaluru', localLanguages: ['English','Kannada'],
     rating: 4.6,
     reviewCount: 428
   },
@@ -134,6 +137,7 @@ const SEED_BUSINESSES = [
     googlePlaceId: 'ChIJN1t_tDeuEmsRUsoyG83frY7',
     address: '7 Bandra West, Mumbai, MH 400050',
     phone: '+91-22-26432100',
+    country: 'India', state: 'Maharashtra', city: 'Mumbai', localLanguages: ['English','Hindi','Marathi','Hinglish'],
     rating: 4.5,
     reviewCount: 876
   },
@@ -146,6 +150,7 @@ const SEED_BUSINESSES = [
     googlePlaceId: 'ChIJN1t_tDeuEmsRUsoyG83frY8',
     address: 'Jubilee Hills, Hyderabad, TS 500033',
     phone: '+91-40-23607777',
+    country: 'India', state: 'Telangana', city: 'Hyderabad', localLanguages: ['English','Telugu','Hindi'],
     rating: 4.8,
     reviewCount: 2140
   },
@@ -158,6 +163,7 @@ const SEED_BUSINESSES = [
     googlePlaceId: 'ChIJN1t_tDeuEmsRUsoyG83frY9',
     address: '22 Koramangala, Bengaluru, KA 560034',
     phone: '+91-80-25678901',
+    country: 'India', state: 'Karnataka', city: 'Bengaluru', localLanguages: ['English','Kannada'],
     rating: 4.7,
     reviewCount: 659
   }
