@@ -319,7 +319,6 @@ async function adminFetch(url, options) {
   if (r.status === 401) {
     ADMIN_TOKEN = "";
     sessionStorage.removeItem(AUTH_KEY);
-  ADMIN_TOKEN = "";
     document.getElementById("loginScreen").style.display = "flex";
     document.getElementById("appShell").style.display = "none";
   }
@@ -338,7 +337,7 @@ var ICONS = {restaurant:"🍽️",hotel:"🏨",salon:"💇",bar:"🍸",hospital:
 async function doLogin() {
   var pw = document.getElementById("adminPw").value;
   try {
-    var r = await adminFetch(API + "/admin/login", {
+    var r = await fetch(API + "/admin/login",
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({password:pw})
