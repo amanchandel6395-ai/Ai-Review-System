@@ -41,6 +41,11 @@ function defaultQuestions(type) {
 
 function normalizeBusiness(b) {
   const obj = b.toObject ? b.toObject() : b;
+  if (!obj.city && /new delhi/i.test(obj.address || '')) { obj.city='New Delhi'; obj.state='Delhi'; }
+  else if (!obj.city && /lucknow/i.test(obj.address || '')) { obj.city='Lucknow'; obj.state='Uttar Pradesh'; }
+  else if (!obj.city && /bengaluru|bangalore/i.test(obj.address || '')) { obj.city='Bengaluru'; obj.state='Karnataka'; }
+  else if (!obj.city && /mumbai|bandra/i.test(obj.address || '')) { obj.city='Mumbai'; obj.state='Maharashtra'; }
+  else if (!obj.city && /hyderabad|jubilee hills/i.test(obj.address || '')) { obj.city='Hyderabad'; obj.state='Telangana'; }
   if (!obj.localLanguages?.length) {
     if (obj.city === 'Bengaluru') obj.localLanguages = ['English', 'Kannada'];
     else if (obj.city === 'Chennai') obj.localLanguages = ['English', 'Tamil'];
