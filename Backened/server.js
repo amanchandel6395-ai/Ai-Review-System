@@ -49,7 +49,19 @@ function normalizeBusiness(b) {
     else if (obj.city === 'Lucknow' || obj.state === 'Uttar Pradesh') obj.localLanguages = ['English', 'Hindi', 'Hinglish'];
     else obj.localLanguages = ['English'];
   }
-  if (!obj.languageConfig?.languages?.length) obj.languageConfig = { mode: 'fixed', languages: obj.localLanguages.map((x, i) => ({ code: x.toLowerCase(), label: x, weight: i === 0 ? 100 : 0 })) };
+  if (!obj.languageConfig?.languages?.length) {
+    const city = String(obj.city || '').toLowerCase();
+    let labels = obj.localLanguages;
+    let mode = 'weighted';
+    if (city === 'new delhi' || city === 'delhi') labels = ['English','Hinglish','Hindi'];
+    else if (city === 'bengaluru' || city === 'bangalore') labels = ['English','Kannada'];
+    else if (city === 'hyderabad') labels = ['English','Telugu'];
+    else if (city === 'chennai') labels = ['English','Tamil'];
+    else if (city === 'mumbai') labels = ['English','Hindi','Marathi','Hinglish'];
+    else if (city === 'lucknow') labels = ['English','Hindi','Hinglish'];
+    const weights = labels.map((x, i) => ({ code:x.toLowerCase(), label:x, weight: labels.length===2 ? (i===0?70:30) : (i===0?50:(i===labels.length-1?35:15)) }));
+    obj.languageConfig = { mode, languages: weights };
+  }
   if (!obj.reviewConfig) obj.reviewConfig = {};
   if (!obj.questions?.length) obj.questions = defaultQuestions(obj.type);
   if (!obj.subscription) obj.subscription = { plan: 'trial', status: 'trial', reviewLimit: 1000, reviewsUsed: 0 };
@@ -62,6 +74,19 @@ function isSubscriptionActive(b) {
   if (s.endDate && new Date(s.endDate) < new Date()) return false;
   if (Number.isFinite(s.reviewLimit) && s.reviewLimit >= 0 && (s.reviewsUsed || 0) >= s.reviewLimit) return false;
   return true;
+}
+
+function pickLanguage(config) {
+  const langs = config?.languages || [];
+  if (!langs.length) return '';
+  if (config.mode === 'customer') return '';
+  if (config.mode === 'fixed') return (langs.find(x => (x.weight ?? 0) > 0) || langs[0]).label || '';
+  if (config.mode === 'random') return langs[Math.floor(Math.random() * langs.length)].label || '';
+  const total = langs.reduce((s,x) => s + Math.max(0, Number(x.weight || 0)), 0);
+  if (!total) return langs[0].label || '';
+  let n = Math.random() * total;
+  for (const lang of langs) { n -= Math.max(0, Number(lang.weight || 0)); if (n <= 0) return lang.label || lang.code || ''; }
+  return langs[0].label || '';
 }
 
 function languageInstruction(cfg, business) {
@@ -240,8 +265,8 @@ app.post('/api/generate-review', reviewLimiter, async (req, res) => {
       if (!isSubscriptionActive(dbBusiness)) return res.status(403).json({ error: 'Business subscription is inactive or review limit has been reached.' });
       const data = normalizeBusiness(dbBusiness);
       cfg = data.reviewConfig || cfg;
-      customerLang = language || data.localLanguages?.join(' + ') || 'English';
       languageConfig = languageConfig || data.languageConfig;
+      customerLang = language || pickLanguage(languageConfig) || data.localLanguages?.join(' + ') || 'English';
     }
     const chipsContext = selectedChips && selectedChips.length > 0 ? `The customer specifically experienced/noted: ${selectedChips.join(', ')}.` : '';
     const minWords = Math.max(8, Number(cfg.minWords || 18));
