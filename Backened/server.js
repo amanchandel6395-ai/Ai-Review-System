@@ -85,7 +85,7 @@ function isSubscriptionActive(b) {
   const s = b.subscription || {};
   if (s.status === 'suspended' || s.status === 'expired') return false;
   if (s.endDate && new Date(s.endDate) < new Date()) return false;
-  if (Number.isFinite(s.reviewLimit) && s.reviewLimit >= 0 && (s.reviewsUsed || 0) >= s.reviewLimit) return false;
+  if (Number.isFinite(s.reviewLimit) && s.reviewLimit >= 0 && s.reviewLimit !== -1 && (s.reviewsUsed || 0) >= s.reviewLimit) return false;
   return true;
 }
 
