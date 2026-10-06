@@ -18,7 +18,6 @@ const PORT = process.env.PORT || 3001;
 // ── OpenAI client ────────────────────────────────────────────────────────────
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
-  baseURL: 'https://api.groq.com/openai/v1'
 });
 // ── MongoDB ──────────────────────────────────────────────────────────────────
 mongoose.connect(process.env.MONGO_URI)
@@ -176,7 +175,7 @@ Output ONLY the review text. No quotes, no preamble.
 `.trim();
 
     const completion = await openai.chat.completions.create({
-      model: 'llama-3.1-8b-instant',
+      model: 'gpt-4o-mini',    
       max_tokens:  150,
       temperature: 0.85,
       messages: [
