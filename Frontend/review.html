@@ -543,6 +543,12 @@ function renderActBtns(){
     </button>`;
 }
 
+function esc(value){
+  return String(value ?? '').replace(/[&<>"']/g, function(ch){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
+  });
+}
+
 function renderQuestions(){
   const b=S.biz;
   const wrap=document.getElementById('qaInner');
