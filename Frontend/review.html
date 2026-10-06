@@ -362,7 +362,15 @@ function toast(msg,type,icon){
 }
 function bizId(){const p=location.pathname.split('/');return p[p.indexOf('review')+1]||null}
 function wc(t){return t.trim()?t.trim().split(/\s+/).length:0}
-function getAns(){return Object.values(S.ans).filter(Boolean)}
+function getAns(){return Object.values(S.ans).flatMap(v=>Array.isArray(v)?v:(v?[v]:[]))}
+function getLanguage(){
+  if(!S.biz?.languageConfig?.languages?.length) return '';
+  if(S.biz.languageConfig.mode==='customer'){
+    return document.getElementById('langSelect')?.value || '';
+  }
+  const active=S.biz.languageConfig.languages.filter(x=>(x.weight??0)>0);
+  return active.length ? active.map(x=>x.label||x.code).join(' + ') : (S.biz.localLanguages||[]).join(' + ');
+}
 function getText(){return(S.mode==='direct'?document.getElementById('dta'):document.getElementById('rta'))?.value||S.review||''}
 
 async function fetchBiz(id){
@@ -378,7 +386,7 @@ async function generate(){
   setTimeout(()=>document.getElementById('rcCard')?.scrollIntoView({behavior:'smooth',block:'nearest'}),220);
   const ans=getAns();
   try{
-    const r=await fetch(`${API}/generate-review`,{method:'POST',headers:{'Content-Type':'application/json'},signal:AbortSignal.timeout(15000),body:JSON.stringify({rating:S.rating,businessType:S.biz.type,businessName:S.biz.name,selectedChips:ans,maxWords:MAX_W,humanStyle:true})});
+    const r=await fetch(`${API}/generate-review`,{method:'POST',headers:{'Content-Type':'application/json'},signal:AbortSignal.timeout(15000),body:JSON.stringify({rating:S.rating,businessType:S.biz.type,businessName:S.biz.name,businessId:S.biz.id,selectedChips:ans,language:getLanguage(),languageConfig:S.biz.languageConfig,reviewConfig:S.biz.reviewConfig,maxWords:MAX_W,humanStyle:true})});
     const d=await r.json();if(!r.ok)throw new Error(d.error||'Failed');S.review=d.review;
   }catch(e){
     const net=e.name==='TypeError'||e.name==='AbortError';
@@ -445,10 +453,18 @@ function updateStars(n){
   document.querySelectorAll('.sbtn').forEach((b,i)=>b.classList.toggle('lit',i<n));
   const m=document.getElementById('moodLbl');if(m)m.textContent=n?MOODS[n]:'Tap a star to rate ⬆';
 }
-function toggleChip(qid,val,el){
-  el.closest('.chips-row').querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
+function toggleChip(qid,val,el,type){
+  const row=el.closest('.chips-row');
+  if(type==='multi'){
+    const arr=Array.isArray(S.ans[qid])?S.ans[qid]:[];
+    el.classList.toggle('on');
+    S.ans[qid]=el.classList.contains('on')?[...arr,val]:arr.filter(x=>x!==val);
+    return;
+  }
+  row.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
   el.classList.toggle('on');S.ans[qid]=el.classList.contains('on')?val:'';
 }
+function setTextAnswer(qid,value){S.ans[qid]=value.trim();}
 function selPlat(pid){
   S.plat=pid;
   document.querySelectorAll('.pbtn').forEach(b=>b.classList.toggle('sel',b.dataset.p===pid));
@@ -486,13 +502,21 @@ function revH(){
 }
 
 function qaH(){
-  const qs=QS[S.biz.type]||QS.other;
-  return qs.map((q,qi)=>`<div class="qblock">
-    <div class="qtop"><div class="qnum">${qi+1}</div><div class="qtxt">${q.q}</div></div>
-    <div class="chips-row">${q.chips.map((ch,ci)=>`
-      <button class="chip" style="animation-delay:${(qi*q.chips.length+ci)*.03}s"
-        onclick="toggleChip('${q.id}','${ch.replace(/'/g,"\\'")}',this)">${ch}</button>`).join('')}
-    </div></div>`).join('');
+  const fallback=QS[S.biz.type]||QS.other;
+  const qs=(S.biz.questions?.length?S.biz.questions:fallback).filter(q=>q.enabled!==false).sort((a,b)=>(a.order||0)-(b.order||0));
+  const lang=S.biz.languageConfig?.mode==='customer'&&S.biz.languageConfig?.languages?.length
+    ? `<div class="qblock"><div class="qtop"><div class="qnum">🌐</div><div class="qtxt">Which language should your review use?</div></div><select id="langSelect" class="lang-select">${S.biz.languageConfig.languages.map(x=>`<option value="${x.label||x.code}">${x.label||x.code}</option>`).join('')}</select></div>` : '';
+  const html=qs.map((q,qi)=>{
+    const opts=q.options||q.chips||[];
+    const type=q.type||'single';
+    let body='';
+    if(type==='text') body=`<textarea class="qtext" placeholder="Type your answer…" oninput="setTextAnswer('${q.id}',this.value)"></textarea>`;
+    else if(type==='yesno') body=`<div class="chips-row">${['Yes','No'].map((ch,ci)=>`<button class="chip" style="animation-delay:${ci*.03}s" onclick="toggleChip('${q.id}','${ch}',this,'single')">${ch}</button>`).join('')}</div>`;
+    else if(type==='rating') body=`<div class="chips-row">${[1,2,3,4,5].map(n=>`<button class="chip" onclick="toggleChip('${q.id}','${n}/5',this,'single')">${n} ⭐</button>`).join('')}</div>`;
+    else body=`<div class="chips-row">${opts.map((o,ci)=>{const label=typeof o==='string'?o:(o.label||o.value||'');return `<button class="chip" style="animation-delay:${(qi*opts.length+ci)*.03}s" onclick="toggleChip('${q.id}','${String(label).replace(/'/g,"\\'")}',this,'${type}')">${label}</button>`;}).join('')}</div>`;
+    return `<div class="qblock"><div class="qtop"><div class="qnum">${qi+1}</div><div class="qtxt">${q.text||q.q||''}${q.required?'<span style="color:var(--g)"> *</span>':''}</div></div>${body}</div>`;
+  }).join('');
+  return lang+html;
 }
 
 function getAvailPlats(){
