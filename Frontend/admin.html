@@ -177,7 +177,9 @@ body{background:var(--bg);color:var(--white);font-family:var(--ff-body);-webkit-
   .form-grid{grid-template-columns:1fr;}
   .fg.full{grid-column:1;}
 }
-  </style>
+  
+.config-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.config-grid .full{grid-column:1/-1}.q-editor{border:1px solid var(--border);border-radius:12px;padding:14px;background:var(--surface2);margin-bottom:10px}.q-opt{display:flex;gap:6px;margin:6px 0}.q-opt input{flex:1}.mini-btn{padding:5px 9px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer}.lang-row{display:flex;gap:8px;margin:6px 0}.lang-row input:first-child{flex:1}.lang-row input:nth-child(2){width:90px}
+</style>
 </head>
 <body>
 
@@ -249,6 +251,14 @@ body{background:var(--bg);color:var(--white);font-family:var(--ff-body);-webkit-
         <button class="btn btn-outline" onclick="closeModal('addModal')">Cancel</button>
         <button class="btn btn-teal"    onclick="addBusiness()">&#x2713; Add</button>
       </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS MODAL -->
+  <div class="modal-bg" id="settingsModal" onclick="if(event.target===this)closeModal('settingsModal')">
+    <div class="modal" style="max-width:900px">
+      <div class="modal-title">Business Settings ⚙️</div>
+      <div id="settingsBody"></div>
     </div>
   </div>
 
@@ -388,6 +398,7 @@ function bizRowHTML(b) {
     '<div class="biz-meta"><span>📂 ' + b.type + "</span><span>🔑 " + b._id + "</span><span>💬 " + (b.reviewCount||0) + "</span></div></div>" +
     '<div class="biz-actions">' +
       '<button class="btn btn-outline" onclick="showQR(\'' + b._id + "','" + name + '\')">📱 QR</button>' +
+      '<button class="btn btn-outline" onclick="openSettings(\'' + b._id + '\')">⚙ Settings</button>' +
       '<button class="btn btn-outline" onclick="window.open(\'/review/' + b._id + "','_blank')\">👁</button>" +
     "</div></div>";
 }
@@ -603,6 +614,45 @@ function downloadRevCSV(type) {
   a.click();
   toast(data.length + " reviews downloaded","teal","⬇");
 }
+
+
+/* BUSINESS SETTINGS */
+var settingsBusinessId=null,settingsQuestions=[];
+function esc(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+async function openSettings(id){
+ settingsBusinessId=id;document.getElementById("settingsModal").classList.add("show");document.getElementById("settingsBody").innerHTML='<div class="skel" style="height:500px"></div>';
+ try{var r=await fetch(API+"/business/"+encodeURIComponent(id)+"/admin"),d=await r.json();if(!r.ok)throw new Error(d.error);renderSettings(d.business);}
+ catch(e){document.getElementById("settingsBody").innerHTML='<div class="empty"><div class="empty-title">Could not load</div><div class="empty-sub">'+esc(e.message)+'</div></div>';}
+}
+function renderSettings(b){
+ settingsQuestions=(b.questions||[]).map(q=>JSON.parse(JSON.stringify(q)));var langs=b.languageConfig?.languages||[];
+ var qh=settingsQuestions.map(function(q,i){return '<div class="q-editor"><div class="fg"><label>Question '+(i+1)+'</label><input class="q-text" value="'+esc(q.text||q.q||"")+'"></div><div class="fg" style="margin-top:8px"><label>Type</label><select class="q-type"><option value="single">Single choice</option><option value="multi">Multiple choice</option><option value="yesno">Yes/No</option><option value="rating">Rating</option><option value="text">Short text</option></select></div><div class="fg" style="margin-top:8px"><label>Options (comma separated)</label><input class="q-opts" value="'+esc((q.options||[]).map(function(o){return typeof o==="string"?o:o.label}).join(", "))+'"></div><label style="display:block;margin-top:8px"><input type="checkbox" class="q-enabled" '+(q.enabled!==false?"checked":"")+'> Enabled</label></div>';}).join("");
+ document.getElementById("settingsBody").innerHTML='<div class="config-grid">'+
+ '<div class="fg"><label>Business Name</label><input id="s-name" value="'+esc(b.name)+'"></div><div class="fg"><label>Type</label><select id="s-type">'+["restaurant","hotel","salon","bar","hospital","cafe","gym","spa","retail","other"].map(function(x){return '<option value="'+x+'" '+(x===b.type?"selected":"")+'>'+x+'</option>"}).join("")+'</select></div>'+
+ '<div class="fg"><label>Country</label><input id="s-country" value="'+esc(b.country||"India")+'"></div><div class="fg"><label>State</label><input id="s-state" value="'+esc(b.state||"")+'"></div><div class="fg"><label>City</label><input id="s-city" value="'+esc(b.city||"")+'"></div><div class="fg"><label>Local Languages</label><input id="s-local" value="'+esc((b.localLanguages||[]).join(", "))+'"></div>'+
+ '<div class="fg full"><label>Description</label><textarea id="s-desc">'+esc(b.description||"")+'</textarea></div><div class="fg"><label>Google Place ID</label><input id="s-place" value="'+esc(b.googlePlaceId||"")+'"></div><div class="fg"><label>Image URL</label><input id="s-img" value="'+esc(b.imageUrl||"")+'"></div>'+
+ '<div class="fg"><label>Language Mode</label><select id="s-langmode"><option value="fixed">Fixed by admin</option><option value="weighted">Weighted</option><option value="random">Random</option><option value="customer">Customer chooses</option></select></div>'+
+ '<div class="fg"><label>Languages & weights</label><div id="langRows">'+langs.map(function(x){return '<div class="lang-row"><input class="sl-lang" value="'+esc(x.label||x.code)+'"><input class="sl-weight" type="number" value="'+(x.weight??0)+'"></div>'}).join("")+'</div><button class="mini-btn" onclick="addLang()">+ Language</button></div>'+
+ '<div class="fg"><label>Min Words</label><input type="number" id="s-min" value="'+(b.reviewConfig?.minWords||18)+'"></div><div class="fg"><label>Max Words</label><input type="number" id="s-max" value="'+(b.reviewConfig?.maxWords||45)+'"></div>'+
+ '<div class="fg"><label>Tone</label><input id="s-tone" value="'+esc(b.reviewConfig?.tone||"natural, conversational and genuine")+'"></div><div class="fg"><label>Style</label><input id="s-style" value="'+esc(b.reviewConfig?.style||"short, everyday customer review")+'"></div>'+
+ '<div class="fg"><label>Emoji</label><select id="s-emoji"><option value="false">No</option><option value="true">Yes</option></select></div><div class="fg full"><label>AI Custom Instructions</label><textarea id="s-inst">'+esc(b.reviewConfig?.customInstructions||"")+'</textarea></div>'+
+ '<div class="fg"><label>Plan</label><select id="s-plan"><option>trial</option><option>basic</option><option>pro</option><option>enterprise</option></select></div><div class="fg"><label>Status</label><select id="s-status"><option>trial</option><option>active</option><option>suspended</option><option>expired</option></select></div>'+
+ '<div class="fg"><label>Start Date</label><input type="date" id="s-start"></div><div class="fg"><label>End Date</label><input type="date" id="s-end"></div><div class="fg"><label>Review Limit</label><input type="number" id="s-limit" value="'+(b.subscription?.reviewLimit??1000)+'"></div><div class="fg"><label>Reviews Used</label><input type="number" id="s-used" value="'+(b.subscription?.reviewsUsed??0)+'"></div>'+
+ '<div class="fg full"><label>Custom Questions</label><div id="questionList">'+qh+'</div><button class="btn btn-outline" onclick="addQuestion()">＋ Add Question</button></div></div>'+
+ '<div class="modal-footer"><button class="btn btn-outline" style="color:var(--coral)" onclick="deleteBusiness()">🗑 Delete</button><span style="flex:1"></span><button class="btn btn-outline" onclick="closeModal(\'settingsModal\')">Cancel</button><button class="btn btn-teal" onclick="saveSettings()">✓ Save All</button></div>';
+ document.getElementById("s-langmode").value=b.languageConfig?.mode||"fixed";document.getElementById("s-emoji").value=String(!!b.reviewConfig?.emoji);document.getElementById("s-plan").value=b.subscription?.plan||"trial";document.getElementById("s-status").value=b.subscription?.status||"trial";
+ if(b.subscription?.startDate)document.getElementById("s-start").value=new Date(b.subscription.startDate).toISOString().slice(0,10);if(b.subscription?.endDate)document.getElementById("s-end").value=new Date(b.subscription.endDate).toISOString().slice(0,10);
+ document.querySelectorAll(".q-editor").forEach(function(el,i){el.querySelector(".q-type").value=settingsQuestions[i]?.type||"single";});
+}
+function addLang(){document.getElementById("langRows").insertAdjacentHTML("beforeend",'<div class="lang-row"><input class="sl-lang" placeholder="Hindi"><input class="sl-weight" type="number" value="0"></div>');}
+function addQuestion(){document.getElementById("questionList").insertAdjacentHTML("beforeend",'<div class="q-editor"><div class="fg"><label>Question</label><input class="q-text" placeholder="How was the service?"></div><div class="fg" style="margin-top:8px"><label>Type</label><select class="q-type"><option value="single">Single choice</option><option value="multi">Multiple choice</option><option value="yesno">Yes/No</option><option value="rating">Rating</option><option value="text">Short text</option></select></div><div class="fg" style="margin-top:8px"><label>Options</label><input class="q-opts" placeholder="Good, Excellent, Average"></div></div>');}
+function collectSettingsQuestions(){return Array.from(document.querySelectorAll(".q-editor")).map(function(el,i){var opts=el.querySelector(".q-opts").value.split(",").map(function(x){return x.trim()}).filter(Boolean);return {id:settingsQuestions[i]?.id||("q"+Date.now()+i),text:el.querySelector(".q-text").value.trim(),type:el.querySelector(".q-type").value,required:false,enabled:el.querySelector(".q-enabled")?el.querySelector(".q-enabled").checked:true,order:i,options:opts.map(function(x){return {label:x,value:x,sentiment:""}})};}).filter(function(q){return q.text});}
+async function saveSettings(){
+ var langs=Array.from(document.querySelectorAll(".lang-row")).map(function(r){var label=r.querySelector(".sl-lang").value.trim();return {code:label.toLowerCase().replace(/\s+/g,"_"),label:label,weight:Number(r.querySelector(".sl-weight").value||0)}}).filter(function(x){return x.label});
+ var body={name:document.getElementById("s-name").value.trim(),type:document.getElementById("s-type").value,description:document.getElementById("s-desc").value.trim(),country:document.getElementById("s-country").value.trim(),state:document.getElementById("s-state").value.trim(),city:document.getElementById("s-city").value.trim(),localLanguages:document.getElementById("s-local").value.split(",").map(function(x){return x.trim()}).filter(Boolean),googlePlaceId:document.getElementById("s-place").value.trim(),imageUrl:document.getElementById("s-img").value.trim(),languageConfig:{mode:document.getElementById("s-langmode").value,languages:langs},reviewConfig:{minWords:Number(document.getElementById("s-min").value||18),maxWords:Number(document.getElementById("s-max").value||45),tone:document.getElementById("s-tone").value.trim(),style:document.getElementById("s-style").value.trim(),emoji:document.getElementById("s-emoji").value==="true",customInstructions:document.getElementById("s-inst").value.trim()},subscription:{plan:document.getElementById("s-plan").value,status:document.getElementById("s-status").value,startDate:document.getElementById("s-start").value,endDate:document.getElementById("s-end").value,reviewLimit:Number(document.getElementById("s-limit").value||0),reviewsUsed:Number(document.getElementById("s-used").value||0)},questions:collectSettingsQuestions()};
+ try{var r=await fetch(API+"/business/"+encodeURIComponent(settingsBusinessId),{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}),d=await r.json();if(!r.ok)throw new Error(d.error||"Save failed");toast("All settings saved ✓","teal","✓");closeModal("settingsModal");await loadBiz();goto("businesses");}catch(e){toast(e.message,"coral","✕");}
+}
+async function deleteBusiness(){if(!confirm("Delete business + reviews + analytics?"))return;try{var r=await fetch(API+"/business/"+encodeURIComponent(settingsBusinessId),{method:"DELETE"});if(!r.ok)throw new Error("Delete failed");toast("Business deleted","teal","🗑");closeModal("settingsModal");await loadBiz();goto("businesses");}catch(e){toast(e.message,"coral","✕");}}
 
 /* ADD BUSINESS */
 function openAddModal() { document.getElementById("addModal").classList.add("show"); }
