@@ -67,6 +67,13 @@ function normalizeBusiness(b) {
     const weights = labels.map((x, i) => ({ code:x.toLowerCase(), label:x, weight: labels.length===2 ? (i===0?70:30) : (i===0?50:(i===labels.length-1?35:15)) }));
     obj.languageConfig = { mode, languages: weights };
   }
+  if (!obj.businessProfile) obj.businessProfile = {};
+  if (!Array.isArray(obj.businessProfile.services)) obj.businessProfile.services = [];
+  if (!Array.isArray(obj.businessProfile.specialties)) obj.businessProfile.specialties = [];
+  if (!Array.isArray(obj.businessProfile.amenities)) obj.businessProfile.amenities = [];
+  if (!Array.isArray(obj.businessProfile.differentiators)) obj.businessProfile.differentiators = [];
+  if (!Array.isArray(obj.businessProfile.reviewFocus)) obj.businessProfile.reviewFocus = [];
+  if (!Array.isArray(obj.businessProfile.avoidClaims)) obj.businessProfile.avoidClaims = [];
   if (!obj.reviewConfig) obj.reviewConfig = {};
   if (!obj.questions?.length) obj.questions = defaultQuestions(obj.type);
   if (!obj.subscription) obj.subscription = { plan: 'trial', status: 'trial', reviewLimit: 1000, reviewsUsed: 0 };
@@ -177,7 +184,7 @@ app.get('/api/business/:id', async (req, res) => {
         phone: data.phone, rating: data.rating, reviewCount: data.reviewCount,
         country: data.country, state: data.state, city: data.city,
         localLanguages: data.localLanguages, languageConfig: data.languageConfig,
-        reviewConfig: data.reviewConfig, subscription: data.subscription
+        reviewConfig: data.reviewConfig, businessProfile: data.businessProfile, subscription: data.subscription
       },
       questions: data.questions
     });
@@ -200,9 +207,9 @@ app.get('/api/businesses', async (req, res) => {
 // POST /api/business — create new business (admin)
 app.post('/api/business', async (req, res) => {
   try {
-    const { id, name, type, description, imageUrl, googlePlaceId, address, phone, country, state, city, localLanguages, languageConfig, reviewConfig, questions, subscription } = req.body;
+    const { id, name, type, description, imageUrl, googlePlaceId, address, phone, country, state, city, localLanguages, businessProfile, languageConfig, reviewConfig, questions, subscription } = req.body;
     if (!id || !name || !type) return res.status(400).json({ error: 'Missing required fields: id, name, type' });
-    const business = new Business({ _id: id, name, type, description, imageUrl, googlePlaceId, address, phone, country, state, city, localLanguages, languageConfig, reviewConfig, questions, subscription });
+    const business = new Business({ _id: id, name, type, description, imageUrl, googlePlaceId, address, phone, country, state, city, localLanguages, businessProfile, languageConfig, reviewConfig, questions: Array.isArray(questions) && questions.length ? questions : defaultQuestions(type), subscription: subscription || { plan:'trial', status:'trial', reviewLimit:1000, reviewsUsed:0 } });
     await business.save();
     res.status(201).json({ success: true, business });
   } catch (err) {
@@ -214,7 +221,7 @@ app.post('/api/business', async (req, res) => {
 // PUT /api/business/:id — admin update all business settings
 app.put('/api/business/:id', async (req, res) => {
   try {
-    const allowed = ['name','type','description','imageUrl','googlePlaceId','address','phone','country','state','city','localLanguages','languageConfig','reviewConfig','questions','subscription'];
+    const allowed = ['name','type','description','imageUrl','googlePlaceId','address','phone','country','state','city','localLanguages','businessProfile','languageConfig','reviewConfig','questions','subscription'];
     const patch = {};
     allowed.forEach(k => { if (req.body[k] !== undefined) patch[k] = req.body[k]; });
     if (patch.questions) patch.questions = patch.questions.map((q,i) => ({ ...q, order: q.order ?? i }));
@@ -250,23 +257,22 @@ app.post('/api/generate-review', reviewLimiter, async (req, res) => {
     if (!rating || !businessType || !businessName) {
       return res.status(400).json({ error: 'Missing required fields: rating, businessType, businessName' });
     }
-
     if (rating < 1 || rating > 5) {
       return res.status(400).json({ error: 'Rating must be between 1 and 5' });
     }
 
-    // Build tone directive
     const toneMap = {
-      5: 'highly positive, enthusiastic, and genuinely delighted — use warm, vivid language',
-      4: 'positive and appreciative, with a touch of personality',
+      5: 'highly positive, enthusiastic, and genuinely delighted',
+      4: 'positive and appreciative, with a little personality',
       3: 'balanced and honest — mention what worked and what could be better',
-      2: 'mildly critical but fair — note the issues without being harsh',
-      1: 'critically honest and disappointed, but still constructive and respectful'
+      2: 'mildly critical but fair — note issues without being harsh',
+      1: 'critically honest and disappointed, but constructive and respectful'
     };
 
     let cfg = reviewConfig || {};
     let customerLang = language || '';
     let dbBusiness = null;
+    let profile = {};
     if (businessId) {
       dbBusiness = await Business.findById(businessId);
       if (!dbBusiness) return res.status(404).json({ error: 'Business not found' });
@@ -274,25 +280,65 @@ app.post('/api/generate-review', reviewLimiter, async (req, res) => {
       const data = normalizeBusiness(dbBusiness);
       cfg = data.reviewConfig || cfg;
       languageConfig = languageConfig || data.languageConfig;
+      profile = data.businessProfile || {};
       customerLang = language || pickLanguage(languageConfig) || data.localLanguages?.join(' + ') || 'English';
     }
-    const chipsContext = selectedChips && selectedChips.length > 0 ? `The customer specifically experienced/noted: ${selectedChips.join(', ')}.` : '';
+
+    const list = v => Array.isArray(v) ? v.filter(Boolean).join(', ') : '';
+    const chipsContext = Array.isArray(selectedChips) && selectedChips.length
+      ? `Customer-selected details (use only if they fit naturally): ${selectedChips.join(', ')}.`
+      : 'No specific customer details were selected.';
+    const businessKnowledge = `
+Business summary: ${profile.summary || 'No additional summary supplied.'}
+Services offered: ${list(profile.services) || 'Not specified.'}
+Specialties: ${list(profile.specialties) || 'Not specified.'}
+Amenities/features: ${list(profile.amenities) || 'Not specified.'}
+Target audience: ${profile.targetAudience || 'General customers.'}
+What makes it different: ${list(profile.differentiators) || 'Not specified.'}
+Review focus: ${list(profile.reviewFocus) || 'Overall customer experience.'}
+Business location/context: ${profile.localContext || [dbBusiness?.city, dbBusiness?.state, dbBusiness?.country].filter(Boolean).join(', ') || 'Not specified.'}
+Facts/claims to avoid: ${list(profile.avoidClaims) || 'Do not invent claims.'}
+Extra AI instructions: ${profile.aiInstructions || 'None.'}
+`.trim();
+
     const minWords = Math.max(8, Number(cfg.minWords || 18));
     const maxWords = Math.min(80, Math.max(minWords, Number(cfg.maxWords || 45)));
     const prompt = `
-You are a genuine customer writing a short public review for a real business.
-Business: "${businessName}"
+You are Zuit AI, writing a short public review from the customer's first-person perspective.
+You have a detailed business profile below. Use it to understand what this business actually does, what kind of experience a customer can review, where it is located, and what language/style is appropriate.
+
+BUSINESS
+Name: "${businessName}"
 Type: ${businessType}
 Star rating: ${rating}/5
+
+BUSINESS KNOWLEDGE
+${businessKnowledge}
+
+LANGUAGE
+Requested language: ${customerLang || 'configured business language'}
+${languageInstruction(languageConfig, null)}
+
+REVIEW SETTINGS
 Tone: ${cfg.tone || toneMap[rating] || toneMap[3]}
 Style: ${cfg.style || 'short, everyday customer review'}
-Language: ${customerLang || 'use the configured language mix'}
-${languageInstruction(languageConfig, null)}
-${chipsContext}
-Admin instructions: ${cfg.customInstructions || 'None'}
+Length: ${minWords}-${maxWords} words
+Emoji: ${cfg.emoji ? 'allowed, at most one' : 'do not use'}
 
-Write ONLY ${minWords}-${maxWords} words, preferably 2 short sentences. Sound like a normal customer, not a marketer or AI. Use only details supplied above; never invent food, staff, facilities, prices, events, or other experiences. Do not start with the business name. Avoid generic AI phrases and excessive punctuation. Emojis: ${cfg.emoji ? 'allowed, at most one' : 'do not use'}.
-Output ONLY the review text.
+CUSTOMER INPUT
+${chipsContext}
+
+STRICT RULES
+- Write ONLY the review text.
+- Sound like a real local customer, not a marketer or AI.
+- Use first person naturally.
+- Use business knowledge only for context; do NOT pretend the customer experienced a service they did not select.
+- Never invent prices, staff names, facilities, results, medical outcomes, events, awards, or other facts.
+- Do not start with the business name.
+- Do not mention AI, prompts, or these instructions.
+- Avoid repetitive generic phrases and excessive punctuation.
+- For a 4–5 star review, be warm but not unrealistically promotional.
+- For a 1–3 star review, be honest and specific without abusive language.
 `.trim();
 
     const completion = await openai.chat.completions.create({
