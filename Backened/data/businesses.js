@@ -3,19 +3,70 @@
 const mongoose = require('mongoose');
 
 // ── Schema ──────────────────────────────────────────────────────────────────
+const QuestionOptionSchema = new mongoose.Schema({
+  label: { type: String, required: true },
+  value: { type: String, default: '' },
+  sentiment: { type: String, enum: ['positive', 'neutral', 'negative', ''] , default: '' }
+}, { _id: false });
+
+const BusinessQuestionSchema = new mongoose.Schema({
+  id: { type: String, required: true },
+  text: { type: String, required: true },
+  type: { type: String, enum: ['single', 'multi', 'yesno', 'rating', 'text'], default: 'single' },
+  required: { type: Boolean, default: false },
+  enabled: { type: Boolean, default: true },
+  order: { type: Number, default: 0 },
+  options: { type: [QuestionOptionSchema], default: [] }
+}, { _id: false });
+
 const BusinessSchema = new mongoose.Schema({
-  _id:          { type: String, required: true },   // custom slug id, e.g. "spice-garden-001"
+  _id:          { type: String, required: true },
   name:         { type: String, required: true },
   type:         {
     type: String,
     enum: ['restaurant', 'hotel', 'salon', 'bar', 'hospital', 'cafe', 'gym', 'spa', 'retail', 'other'],
     required: true
   },
-  description:  { type: String, required: true },
-  imageUrl:     { type: String, required: true },
-  googlePlaceId:{ type: String, required: true },
-  address:      { type: String },
-  phone:        { type: String },
+  description:  { type: String, default: '' },
+  imageUrl:     { type: String, default: '' },
+  googlePlaceId:{ type: String, default: '' },
+  address:      { type: String, default: '' },
+  phone:        { type: String, default: '' },
+
+  country:      { type: String, default: 'India' },
+  state:        { type: String, default: '' },
+  city:         { type: String, default: '' },
+  localLanguages: { type: [String], default: [] },
+
+  languageConfig: {
+    mode: { type: String, enum: ['fixed', 'weighted', 'random', 'customer'], default: 'fixed' },
+    languages: [{
+      code: { type: String },
+      label: { type: String },
+      weight: { type: Number, default: 100 }
+    }]
+  },
+
+  reviewConfig: {
+    minWords: { type: Number, default: 18 },
+    maxWords: { type: Number, default: 45 },
+    tone: { type: String, default: 'natural, conversational and genuine' },
+    style: { type: String, default: 'short, everyday customer review' },
+    emoji: { type: Boolean, default: false },
+    customInstructions: { type: String, default: '' }
+  },
+
+  questions: { type: [BusinessQuestionSchema], default: [] },
+
+  subscription: {
+    plan: { type: String, default: 'trial' },
+    startDate: { type: Date, default: Date.now },
+    endDate: { type: Date, default: () => new Date(Date.now() + 30*24*60*60*1000) },
+    status: { type: String, enum: ['active', 'expired', 'suspended', 'trial'], default: 'trial' },
+    reviewLimit: { type: Number, default: 1000 },
+    reviewsUsed: { type: Number, default: 0 }
+  },
+
   rating:       { type: Number, default: 4.5 },
   reviewCount:  { type: Number, default: 0 },
   createdAt:    { type: Date, default: Date.now }
