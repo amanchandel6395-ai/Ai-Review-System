@@ -23,6 +23,7 @@ body{background:var(--bg);color:var(--w);font-family:var(--f);min-height:100vh;o
 #splash{position:fixed;inset:0;z-index:999;background:var(--bg);
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
   animation:sOut 0.5s 2.2s ease forwards}
+#splash.gone{opacity:0!important;pointer-events:none!important;visibility:hidden!important;transition:opacity .25s ease}
 @keyframes sOut{to{opacity:0;pointer-events:none;visibility:hidden}}
 .sl{font-family:var(--fs);font-size:52px;font-style:italic;
   background:linear-gradient(135deg,var(--y),var(--y2));
@@ -39,9 +40,15 @@ body{background:var(--bg);color:var(--w);font-family:var(--f);min-height:100vh;o
 /* APP */
 #app{max-width:460px;margin:0 auto;min-height:100vh;position:relative;
   opacity:0;animation:fu .7s 2.4s ease forwards}
+#app.ready{opacity:1!important;transition:opacity .3s ease}
 #pgbar{position:fixed;top:0;left:0;height:2px;
   background:linear-gradient(90deg,var(--y),var(--y2));
   box-shadow:0 0 8px rgba(245,197,24,.5);z-index:900;transition:width .4s ease}
+
+/* iOS Safari font zoom fix */
+@media (max-width: 640px) {
+  .rta, .dta, .qtext { font-size: 16px !important; }
+}
 
 /* SKELETON */
 .sk{background:linear-gradient(90deg,var(--bg2) 25%,var(--bg3) 50%,var(--bg2) 75%);
@@ -239,10 +246,7 @@ body{background:var(--bg);color:var(--w);font-family:var(--f);min-height:100vh;o
   <div id="ct" style="display:none"></div>
 </div>
 <script>
-const API = window.API_BASE ||
-  (location.hostname === 'localhost'
-    ? 'http://localhost:3001/api'
-    : 'https://ai-review-system-1.onrender.com/api');
+const API = window.API_BASE || '/api';
 let MAX_W=65;
 const ICONS={restaurant:'🍽️',hotel:'🏨',salon:'💇',bar:'🍸',hospital:'🏥',cafe:'☕',gym:'💪',spa:'🧖',retail:'🛍️',clothing:'👗',other:'⭐'};
 const MOODS={1:'Ugh, that bad? 😬',2:'Not great at all 😕',3:'It was just okay 😐',4:'Pretty good! 😊',5:'Absolutely loved it! 🤩'};
@@ -301,48 +305,130 @@ const QS={
 };
 QS.retail=QS.clothing;
 
-function humanReview(rating,type,name,ans){
-  const a1=ans[0]||'',a2=ans[1]||'',a3=ans[2]||'';
-  const op5=[`Genuinely one of the better ${type} experiences I've had in a while.`,`${name} really knows what they're doing.`,`Came with high expectations and ${name} still managed to exceed them.`,`Really glad I chose ${name} — did not disappoint at all.`,`${name} nailed it from start to finish.`];
-  const op4=[`Pretty solid visit to ${name}.`,`Had a good time at ${name} overall.`,`${name} was a good choice — no regrets.`,`Came to ${name} and left quite satisfied.`];
-  const op3=[`${name} was alright — had its moments.`,`Mixed bag at ${name} honestly.`,`Decent visit to ${name}, though a few things could be better.`];
-  const op2=[`Bit underwhelmed by ${name} this time.`,`Expected more from ${name} if I'm honest.`,`${name} didn't quite hit the mark.`];
-  const op1=[`Really not a good experience at ${name}.`,`${name} needs some serious attention.`,`Won't be returning to ${name} anytime soon.`];
-  const ops={5:op5,4:op4,3:op3,2:op2,1:op1};
-  const ends5=['Would go back without a second thought.','Telling everyone I know about this place.','Highly recommended — no hesitation.','Will definitely be making this a regular.'];
-  const ends4=['Would come back for sure.','Happy to recommend this.','Good place, worth a visit.','Will be back.'];
-  const ends3=['Might give it another shot.','Room to improve but not bad overall.','Okay for the price.'];
-  const ends2=['Hopefully better next time.','Would need to see improvements before I return.','Not in a rush to go back.'];
-  const ends1=['Would not recommend at this point.','Hope they sort things out soon.','Disappointed overall.'];
-  const endss={5:ends5,4:ends4,3:ends3,2:ends2,1:ends1};
-  const pool=ops[rating]||op3;const epool=endss[rating]||ends3;
-  const opener=pool[Math.floor(Math.random()*pool.length)];
-  const ender=epool[Math.floor(Math.random()*epool.length)];
-  let mid='';
-  if(a1&&a2){
-    if(rating>=4)mid=`${a1} was ${a2.toLowerCase()}, and ${a3?a3.toLowerCase()+' really made the difference':'the whole experience was solid'}.`;
-    else if(rating===3)mid=`${a1} was ${a2.toLowerCase()} — ${a3?a3.toLowerCase()+' could use some work':'nothing too remarkable'}.`;
-    else mid=`${a1} was ${a2.toLowerCase()} and ${a3?a3.toLowerCase()+' was an issue too':'it really showed in the overall experience'}.`;
-  } else if(a1){
-    mid=rating>=4?`${a1} was a real highlight.`:`${a1} was where things fell a bit short.`;
+function humanReview(rating, type, name, ans, prevReview, requestedLang){
+  const a1 = ans[0] || (type==='restaurant'||type==='cafe' ? 'the food' : (type==='salon'||type==='spa' ? 'the treatment' : 'the service'));
+  const a2 = ans[1] || 'great';
+  const a3 = ans[2] || '';
+  const prev = (prevReview || '').toLowerCase();
+
+  // 10 me se sirf 2 review (20%) Hinglish & mix hone chahiye, 80% natural English
+  const supportsHinglish = S.biz?.localLanguages?.some(l => /hindi|hinglish/i.test(l)) ||
+    (S.biz?.languageConfig?.languages || []).some(l => /hindi|hinglish/i.test(l.label || l.code || ''));
+  const isExplicitHinglish = requestedLang === 'Hinglish' || requestedLang === 'Hindi';
+  const isHinglish = isExplicitHinglish || (supportsHinglish && Math.random() < 0.20);
+
+  // Dynamic length tier: ~19 words (short), ~30-34 words (medium), ~48-55 words (long)
+  const rTier = Math.random();
+  const tier = rTier < 0.35 ? 'short' : (rTier < 0.75 ? 'medium' : 'long');
+
+  let pool = [];
+
+  if (isHinglish) {
+    if (rating >= 4) {
+      if (tier === 'short') {
+        pool = [
+          `Khana sach me lajawab tha! Specially ${a1} ekdum fresh aur flavorful tha. Service super fast thi, definitely recommend karunga! 😋⭐`,
+          `Pehli baar try kiya aur maza aa gaya. ${a1} ka taste spot-on tha aur staff kafi polite tha. 5/5 stars! 🙌🔥`,
+          `Bahut sahi jagah hai! ${a1} try kiya jo ki sach me zabardast tha. Full paisa vasool experience raha! 💯👍`,
+          `Taste aur quality dono top notch! ${a1} must-try hai yahan ka. Agli baar bhi yahin aayenge! ✨👌`
+        ];
+      } else if (tier === 'medium') {
+        pool = [
+          `Family ke sath visit kiya aur overall experience bahut badiya raha! Specially ${a1} ka taste ek number tha aur service bhi kafi prompt thi. Staff ka behavior polite tha, definitely repeat visit banta hai! 😋🙌⭐`,
+          `Weekend par friends ke sath yahan gaye the. ${a1} order kiya jo ki fresh, hot aur ekdum delicious tha. Ambience bhi mast tha aur service super fast thi. 10/10 from my side! 🔥💯👌`,
+          `Genuinely bahut accha experience raha ${name} me. Yahan ka ${a1} sach me best hai, portion size aur taste dono perfect the. Service quick aur staff welcoming tha. Jarur try karein! ✨👍`,
+          `Taste, quality aur hygiene sab kuch top notch tha! ${a1} try kiya aur maza aa gaya. Staff kafi helpful tha aur order bina kisi delay ke aa gaya. Full paisa vasool! 👏⭐`
+        ];
+      } else {
+        pool = [
+          `Aaj family ke sath ${name} me visit kiya aur experience sach me lajawab raha! Humne ${a1} order kiya jo ki ekdum fresh, hot aur perfect flavor ke sath serve hua. Staff bahut polite aur cooperative tha, service lightning fast thi aur hygiene maintain thi. Aise taste aur hospitality ke liye full marks bante hain. Sabhi ko yahan jarur aana chahiye! 😋⭐🙌💯`,
+          `Dosto ke sath pehli baar visit kiya aur honestly expectations se bhi better experience raha! ${a1} ka taste sach me zabardast tha aur portion size bhi kaafi accha tha. Waiters kafi attentive the aur order aane me bilkul time nahi laga. Ambience fresh aur pleasant tha. Yahan ka overall vibe aur quality dono 10 on 10 hain, definitely recommend karunga! 🔥✨👌👍`,
+          `Bohot hi shandar visit raha! Yahan ka ${a1} try kiya jo ki pure authentic taste ke sath tha, ekdum lajawab. Service super quick thi aur staff ne pure time warm hospitality dikhayi. Cleanliness aur presentation bhi top-class thi. Aise great food aur friendly atmosphere ke baad to baar baar aane ka man karta hai. Full paisa vasool experience! 👏⭐💯`
+        ];
+      }
+    } else if (rating === 3) {
+      pool = [
+        `Decent visit raha. ${a1} ka taste theek tha, lekin service thodi slow thi. Staff polite tha. 👍⏳`,
+        `Average experience raha yahan. ${a1} accha tha par thoda wait karna pada order ke liye. Space clean tha. 😐👍`
+      ];
+    } else {
+      pool = [
+        `Experience thoda disappointing raha aaj. ${a1} fresh nahi laga aur service kafi slow thi. Improvement ki jarurat hai. 👎😕`
+      ];
+    }
+  } else {
+    // English reviews
+    if (rating >= 4) {
+      if (tier === 'short') {
+        pool = [
+          `Had lunch here today and the ${a1.toLowerCase()} was absolutely delicious! Fast service and warm staff. Highly recommended! ⭐🙌`,
+          `Popped in for a quick bite. Really loved the ${a1.toLowerCase()} — fresh, piping hot, and full of flavor. Great vibe! ✨👍`,
+          `Stopped by ${name} and was seriously impressed. The ${a1.toLowerCase()} was cooked to perfection. Will definitely be coming back! 😋🔥`,
+          `Such a great experience! Ordered the ${a1.toLowerCase()} and it totally hit the spot. Friendly team and quick service. 💯👌`,
+          `Solid 5-star experience! The ${a1.toLowerCase()} was top notch and didn't take long at all. Warm hospitality throughout. ⭐👏`,
+          `Really great quality. The ${a1.toLowerCase()} was so flavorful and fresh. Staff took great care of us! 🍽️✨`
+        ];
+      } else if (tier === 'medium') {
+        pool = [
+          `Came here with friends and had a wonderful experience! The ${a1.toLowerCase()} was exceptionally flavorful and fresh. Service was quick, tables were spotless, and the team was super polite. Will definitely visit again soon! 😋🙌✨`,
+          `First time visiting ${name} and it exceeded our expectations. Ordered the ${a1.toLowerCase()}${a3 ? ' along with ' + a3.toLowerCase() : ''} and every bite was perfection. Generous portions and very courteous hospitality. Highly recommended! ⭐👍💯`,
+          `Such a delightful meal today! The ${a1.toLowerCase()} came out piping hot and tasted amazing. Staff was attentive without being intrusive, and the ambiance was cozy. A true standout place in town! 🔥👌⭐`,
+          `Really loved everything about this visit. From the warm welcome to the delicious ${a1.toLowerCase()}, everything was top tier. Quick turnaround time and great pricing too. Deserves all the 5 stars! ⭐👏`,
+          `Stopped in for a relaxed meal and was blown away by the quality. The ${a1.toLowerCase()} was cooked to perfection and full of authentic flavor. Friendly staff and great atmosphere! 🍽️✨`
+        ];
+      } else {
+        pool = [
+          `Had an exceptional experience visiting ${name} today! We decided to order the ${a1.toLowerCase()}${a3 ? ' along with ' + a3.toLowerCase() : ''}, and it was prepared to absolute perfection with wonderful freshness and authentic flavor. The staff was incredibly welcoming, service was prompt despite the crowd, and the whole atmosphere was clean and lively. Easily one of our best visits — highly recommended to everyone! ⭐😋🙌💯`,
+          `We visited on a recommendation and it truly lived up to all the hype. The ${a1.toLowerCase()} was the absolute highlight of our meal — rich, fresh, and cooked with genuine care. Service was speedy and courteous from start to finish, with great attention to cleanliness and presentation. It is rare to find this level of quality and value. Definitely coming back very soon! ✨🔥🍽️👌`,
+          `Dropped in for dinner and left thoroughly impressed with both the food and the hospitality. The ${a1.toLowerCase()} was bursting with flavor and served piping hot without any long wait. The team went out of their way to make sure we were comfortable and satisfied. Great ambiance, reasonable prices, and impeccable taste. A solid 5-star experience from beginning to end! ⭐👏💯`,
+          `Everything about our visit to ${name} was spot on. Ordered the ${a1.toLowerCase()} and it was hands down one of the most flavorful dishes we have had in a long time. The portions were generous, service was lightning fast, and the staff greeted us with genuine warmth. If you are looking for fantastic quality and great service, look no further! 🙌🔥✨`
+        ];
+      }
+    } else if (rating === 3) {
+      pool = [
+        `Decent visit to ${name}. The ${a1.toLowerCase()} was alright, but service was a bit slow today. Staff was polite though. 👍⏳`,
+        `Average experience overall. The ${a1.toLowerCase()} tasted good, but had to wait quite a while for the order to arrive. Clean space and courteous staff, hope service speed improves. 😐👍`,
+        `Visited ${name} today hoping for a quick meal. While the ${a1.toLowerCase()} was decent and served warm, the waiting time was definitely on the longer side. An okay visit with room for improvement. 😐⏳`
+      ];
+    } else {
+      pool = [
+        `Disappointed with our visit today. The ${a1.toLowerCase()} was subpar and service was way too slow. Needs improvement. 👎😕`,
+        `Unfortunately not a great experience at ${name}. The ${a1.toLowerCase()} was not fresh and took almost 40 minutes to arrive. Staff seemed overwhelmed. Expected much better. 👎⏳`
+      ];
+    }
   }
-  return mid?`${opener} ${mid} ${ender}`:`${opener} ${ender}`;
+
+  const filtered = pool.filter(t => !prev || !t.toLowerCase().includes(prev.slice(0, 15)));
+  const finalPool = filtered.length ? filtered : pool;
+  return finalPool[Math.floor(Math.random() * finalPool.length)];
 }
 
-let S={biz:null,rating:0,ans:{},review:'',mode:'ai',generating:false,plat:'google'};
+let S = { biz: null, rating: 0, ans: {}, review: '', mode: 'ai', generating: false, plat: 'google', regenCount: 0 };
 
-const PL={
-  google:{n:'Google',icon:'🌐',url:b=>`https://search.google.com/local/writereview?placeid=${b.googlePlaceId}`},
-  zomato:{n:'Zomato',icon:'🍕',url:b=>b.platforms?.zomato?`https://www.zomato.com/restaurant/${b.platforms.zomato}/reviews`:null},
-  swiggy:{n:'Swiggy',icon:'🛵',url:b=>b.platforms?.swiggy?`https://www.swiggy.com/restaurants/${b.platforms.swiggy}`:null},
-  oyo:{n:'OYO',icon:'🏠',url:b=>b.platforms?.oyo?`https://www.oyorooms.com/hotels/${b.platforms.oyo}#reviews`:null},
-  mmt:{n:'MakeMyTrip',icon:'✈️',url:b=>b.platforms?.mmt?`https://www.makemytrip.com/hotels/hotel-details/?hotelId=${b.platforms.mmt}`:null},
-  tripadvisor:{n:'TripAdvisor',icon:'🦉',url:b=>b.platforms?.tripadvisor?`https://www.tripadvisor.in/UserReview-${b.platforms.tripadvisor}`:null},
-  booking:{n:'Booking.com',icon:'🔵',url:b=>b.platforms?.booking?`https://www.booking.com/hotel/in/${b.platforms.booking}.html`:null}
+const PL = {
+  google: { n: 'Google', icon: '🌐', url: b => b?.googleReviewUrl || (b?.googlePlaceId ? `https://search.google.com/local/writereview?placeid=${b.googlePlaceId}` : 'https://www.google.com') },
+  zomato: { n: 'Zomato', icon: '🍕', url: b => b.platforms?.zomato ? `https://www.zomato.com/restaurant/${b.platforms.zomato}/reviews` : null },
+  swiggy: { n: 'Swiggy', icon: '🛵', url: b => b.platforms?.swiggy ? `https://www.swiggy.com/restaurants/${b.platforms.swiggy}` : null },
+  oyo: { n: 'OYO', icon: '🏠', url: b => b.platforms?.oyo ? `https://www.oyorooms.com/hotels/${b.platforms.oyo}#reviews` : null },
+  mmt: { n: 'MakeMyTrip', icon: '✈️', url: b => b.platforms?.mmt ? `https://www.makemytrip.com/hotels/hotel-details/?hotelId=${b.platforms.mmt}` : null },
+  tripadvisor: { n: 'TripAdvisor', icon: '🦉', url: b => b.platforms?.tripadvisor ? `https://www.tripadvisor.in/UserReview-${b.platforms.tripadvisor}` : null },
+  booking: { n: 'Booking.com', icon: '🔵', url: b => b.platforms?.booking ? `https://www.booking.com/hotel/in/${b.platforms.booking}.html` : null }
 };
-const TPL={restaurant:['google','zomato','swiggy','tripadvisor'],hotel:['google','oyo','mmt','tripadvisor','booking'],cafe:['google','zomato','swiggy'],bar:['google','zomato','tripadvisor'],salon:['google','tripadvisor'],hospital:['google'],gym:['google'],spa:['google','tripadvisor'],retail:['google','tripadvisor'],clothing:['google','tripadvisor'],other:['google']};
+const TPL = {
+  restaurant: ['google','zomato','swiggy','tripadvisor'],
+  hotel: ['google','oyo','mmt','tripadvisor','booking'],
+  cafe: ['google','zomato','swiggy'],
+  bar: ['google','zomato','tripadvisor'],
+  salon: ['google','tripadvisor'],
+  hospital: ['google'],
+  gym: ['google'],
+  spa: ['google','tripadvisor'],
+  retail: ['google','tripadvisor'],
+  clothing: ['google','tripadvisor'],
+  other: ['google']
+};
 
-const DEMOS={
+const DEMOS = {
   'spice-garden-001':{business:{id:'spice-garden-001',name:'Spice Garden',type:'restaurant',description:'Authentic North Indian cuisine crafted with heirloom spices.',imageUrl:'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&q=80',googlePlaceId:'ChIJN1t_tDeuEmsRUsoyG83frY4'}},
   'taj-palace-002':{business:{id:'taj-palace-002',name:'Taj Palace Hotel',type:'hotel',description:'Five-star luxury — royal suites, world-class amenities.',imageUrl:'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800&q=80',googlePlaceId:'ChIJN1t_tDeuEmsRUsoyG83frY5',platforms:{oyo:'73070'}}},
   'urban-glow-003':{business:{id:'urban-glow-003',name:'Urban Glow Salon',type:'salon',description:'Premium hair styling and skin treatments.',imageUrl:'https://images.unsplash.com/photo-1560066984-138daaa5c91a?w=800&q=80',googlePlaceId:'ChIJN1t_tDeuEmsRUsoyG83frY6'}},
@@ -362,21 +448,45 @@ function toast(msg,type,icon){
 }
 function bizId(){const p=location.pathname.split('/');return p[p.indexOf('review')+1]||null}
 function wc(t){return t.trim()?t.trim().split(/\s+/).length:0}
-function getAns(){return Object.values(S.ans).flatMap(v=>Array.isArray(v)?v:(v?[v]:[]))}
+function getAns(){return Object.values(S.ans).flatMap(v=>Array.isArray(v)?v:(v?[v]:[])).filter(Boolean)}
+function getQA(){
+  const fallback=QS[S.biz?.type]||QS.other;
+  const qs=(S.biz?.questions?.length?S.biz.questions:fallback).filter(q=>q&&q.enabled!==false);
+  return qs.map(q=>{
+    const v=S.ans[q.id];
+    const str=Array.isArray(v)?v.filter(Boolean).join(', '):(v||'');
+    return { question: q.text||q.q||'', answer: str };
+  }).filter(item=>item.answer);
+}
+
 function getLanguage(){
-  if(!S.biz?.languageConfig?.languages?.length) return '';
-  if(S.biz.languageConfig.mode==='customer'){
+  if(S.biz?.languageConfig?.mode==='customer'){
     return document.getElementById('langSelect')?.value || '';
   }
-  const active=S.biz.languageConfig.languages.filter(x=>(x.weight??0)>0);
-  return active.length ? active.map(x=>x.label||x.code).join(' + ') : (S.biz.localLanguages||[]).join(' + ');
+  // 10 me se sirf 2 review (20%) Hinglish / mix, 80% natural English
+  const supportsHinglish = S.biz?.localLanguages?.some(l => /hindi|hinglish/i.test(l)) ||
+    (S.biz?.languageConfig?.languages || []).some(l => /hindi|hinglish/i.test(l.label || l.code || ''));
+  if (supportsHinglish) {
+    return Math.random() < 0.20 ? 'Hinglish' : 'English';
+  }
+  return 'English';
 }
 function getText(){return(S.mode==='direct'?document.getElementById('dta'):document.getElementById('rta'))?.value||S.review||''}
 
 async function fetchBiz(id){
   pgbar(30);
-  try{const r=await fetch(`${API}/business/${id}`,{signal:AbortSignal.timeout(5000)});pgbar(70);if(!r.ok)throw new Error('Not found');const d=await r.json();if(d.business?.reviewConfig?.maxWords)MAX_W=Math.min(80,Math.max(10,Number(d.business.reviewConfig.maxWords)));return d;}
-  catch{pgbar(70);if(DEMOS[id])return DEMOS[id];throw new Error('Business not found');}
+  try{
+    const r=await fetch(`${API}/business/${id}`,{signal:AbortSignal.timeout(5000)});
+    pgbar(70);
+    if(!r.ok)throw new Error('Not found');
+    const d=await r.json();
+    if(d.business?.reviewConfig?.maxWords)MAX_W=Math.min(80,Math.max(10,Number(d.business.reviewConfig.maxWords)));
+    return d;
+  }catch{
+    pgbar(70);
+    if(DEMOS[id])return DEMOS[id];
+    throw new Error('Business not found');
+  }
 }
 
 async function generate(){
@@ -385,16 +495,49 @@ async function generate(){
   showCard('rcCard');setRB(loadH());
   setTimeout(()=>document.getElementById('rcCard')?.scrollIntoView({behavior:'smooth',block:'nearest'}),220);
   const ans=getAns();
+  const qaDetails=getQA();
   try{
-    const r=await fetch(`${API}/generate-review`,{method:'POST',headers:{'Content-Type':'application/json'},signal:AbortSignal.timeout(15000),body:JSON.stringify({rating:S.rating,businessType:S.biz.type,businessName:S.biz.name,businessId:S.biz.id,selectedChips:ans,language:getLanguage(),languageConfig:S.biz.languageConfig,reviewConfig:S.biz.reviewConfig,maxWords:MAX_W,humanStyle:true})});
-    const d=await r.json();if(!r.ok){const err=new Error(d.error||'Failed');err.status=r.status;throw err;}S.review=d.review;
+    const r=await fetch(`${API}/generate-review`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      signal:AbortSignal.timeout(15000),
+      body:JSON.stringify({
+        rating:S.rating,
+        businessType:S.biz.type,
+        businessName:S.biz.name,
+        businessId:S.biz.id,
+        selectedChips:ans,
+        qaDetails:qaDetails,
+        previousReview:S.review || '',
+        language:getLanguage(),
+        languageConfig:S.biz.languageConfig,
+        reviewConfig:S.biz.reviewConfig,
+        maxWords:MAX_W,
+        humanStyle:true,
+        seed:Date.now() + Math.random()
+      })
+    });
+    const d=await r.json();
+    if(!r.ok){const err=new Error(d.error||'Failed');err.status=r.status;throw err;}
+    S.review=d.review;
   }catch(e){
     const net=e.name==='TypeError'||e.name==='AbortError';
-    if(net){S.review=humanReview(S.rating,S.biz.type,S.biz.name,ans);toast('Review ready!','y','✨');}
-    else{S.review='';toast(e.status===403?(e.message||'Subscription inactive'):'Try again','y','⚠️');}
+    if(net || !S.review){
+      S.review=humanReview(S.rating,S.biz.type,S.biz.name,ans,S.review,getLanguage());
+      toast('Review ready!','y','✨');
+    }else{
+      toast(e.status===403?(e.message||'Subscription inactive'):'Try again','y','⚠️');
+    }
   }finally{
     S.generating=false;setRB(revH());
     if(S.review){showCard('acCard');setTimeout(()=>document.getElementById('acCard')?.scrollIntoView({behavior:'smooth',block:'nearest'}),200);}
+  }
+}
+
+function onAnswerUpdated(){
+  const btn = document.getElementById('genBtn');
+  if(btn && S.review){
+    btn.innerHTML = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg> ✨ Update Review With New Choices`;
   }
 }
 
@@ -405,71 +548,166 @@ function updWC(el){
   if(f)f.style.width=pct+'%';if(wt)wt.textContent=w+'/'+MAX_W+' words';S.review=el.value;
 }
 
+// Rock-solid iOS Safari + Android clipboard copying
 async function clip(txt){
-  try{await navigator.clipboard.writeText(txt);}
-  catch{const t=document.createElement('textarea');t.value=txt;t.style.cssText='position:fixed;opacity:0';document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);}
-}
-async function quickCopy(){const txt=getText();if(!txt.trim()){toast('Generate a review first','y','⚠️');return;}await clip(txt);toast('Copied!','g','📋');}
-async function postOn(){
-  const txt=getText();if(!txt.trim()){toast('Please generate a review first','y','⚠️');return;}
-  await clip(txt);
-  fetch(`${API}/save-analytics`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({businessId:S.biz.id,rating:S.rating,chips:getAns(),reviewLength:txt.length,wasPosted:true})}).catch(()=>{});
-  showPH(txt);
-  const p=PL[S.plat]||PL.google;const url=p.url(S.biz)||PL.google.url(S.biz);
-  setTimeout(()=>window.open(url,'_blank'),1100);
+  if(!txt) return false;
+  if(navigator.clipboard && window.isSecureContext){
+    try{
+      await navigator.clipboard.writeText(txt);
+      return true;
+    }catch(e){}
+  }
+  try{
+    const t=document.createElement('textarea');
+    t.value=txt;
+    t.setAttribute('readonly','');
+    t.style.position='fixed';
+    t.style.left='-9999px';
+    t.style.top='0';
+    t.style.fontSize='16px';
+    document.body.appendChild(t);
+    if(navigator.userAgent.match(/ipad|ipod|iphone/i)){
+      const range=document.createRange();
+      range.selectNodeContents(t);
+      const sel=window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      t.setSelectionRange(0,999999);
+    }else{
+      t.select();
+    }
+    const ok=document.execCommand('copy');
+    document.body.removeChild(t);
+    return ok;
+  }catch(err){
+    return false;
+  }
 }
 
-function showPH(txt){
+async function quickCopy(){
+  const txt=getText();
+  if(!txt.trim()){toast('Generate a review first','y','⚠️');return;}
+  await clip(txt);
+  toast('Copied to clipboard!','g','📋');
+}
+
+async function postOn(){
+  const txt=getText();
+  if(!txt.trim()){toast('Please generate a review first','y','⚠️');return;}
+  const p=PL[S.plat]||PL.google;
+  const url=p.url(S.biz)||PL.google.url(S.biz);
+
+  // Synchronously copy text immediately during user tap gesture
+  await clip(txt);
+
+  // Background analytics & review logging
+  fetch(`${API}/save-analytics`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({businessId:S.biz.id,rating:S.rating,chips:getAns(),reviewLength:txt.length,wasPosted:true})
+  }).catch(()=>{});
+
+  fetch(`${API}/save-review`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      businessId:S.biz.id,
+      businessName:S.biz.name,
+      rating:S.rating,
+      reviewText:txt,
+      chips:getAns(),
+      type:S.rating>=4?'positive':'negative',
+      sentToGoogle:true,
+      source:'qr_scan'
+    })
+  }).catch(()=>{});
+
+  // Display the user-friendly paste helper sheet
+  showPH(txt, url);
+
+  // Immediate window.open in the same direct touch event stack
+  try{
+    window.open(url,'_blank');
+  }catch(e){}
+}
+
+function showPH(txt, url){
   document.getElementById('ph')?.remove();
   const p=PL[S.plat]||PL.google;
-  const el=document.createElement('div');el.id='ph';
+  const targetUrl=url||p.url(S.biz)||PL.google.url(S.biz);
+  const el=document.createElement('div');
+  el.id='ph';
   const safe=txt.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  el.innerHTML=`<div class="phi">📋</div>
+  el.innerHTML=`
+    <div class="phi">📋</div>
     <div class="pht">Review <span>Copied!</span></div>
-    <div class="phrv"><div class="phrl">Your Review</div><div class="phrt">${safe}</div></div>
+    <div class="phrv">
+      <div class="phrl">Your Review Text</div>
+      <div class="phrt">${safe}</div>
+    </div>
     <div class="phin">
-      <div class="phit">${p.icon} ${p.n} is opening…</div>
-      <div class="phis">Click the review box and press<br>
-        <span class="phk">Ctrl+V</span> or on mobile <span class="phk">Long press → Paste</span>
+      <div class="phit">${p.icon} Ready to post on ${p.n}</div>
+      <div class="phis">
+        📱 <b>On iPhone / Android:</b> Tap the button below to open ${p.n}. When the review box appears, <b>tap the box & choose "Paste"</b>.
       </div>
     </div>
     <div class="ph-btns">
-      <button class="ph-y" id="phCopyBtn">📋 Copy Again</button>
-      <button class="ph-cl" onclick="document.getElementById('ph').remove()">Close</button>
+      <a href="${targetUrl}" target="_blank" rel="noopener noreferrer" class="ph-y" id="phOpenLink" style="text-decoration:none;display:inline-flex;align-items:center;gap:7px;font-size:14px;padding:13px 22px;border-radius:10px;font-weight:700">
+        🚀 Open ${p.n} Reviews
+      </a>
+      <button class="ph-y" id="phCopyBtn" style="background:#222;color:#fff;border:1px solid #444">📋 Copy Again</button>
+      <button class="ph-cl" onclick="document.getElementById('ph').remove()">Done</button>
     </div>`;
   document.body.appendChild(el);
   document.getElementById('phCopyBtn').onclick=()=>clip(txt).then(()=>toast('Copied!','g','📋'));
 }
 
 function selRating(n){
-  S.rating=n;S.ans={};S.review='';updateStars(n);
+  S.rating=n;
+  updateStars(n);
   if(navigator.vibrate)navigator.vibrate(25);
   ['rcCard','acCard'].forEach(id=>{const el=document.getElementById(id);if(el){el.style.display='none';el.classList.remove('in');}});
   showCard('qaCard');
-  document.getElementById('qaInner').innerHTML=qaH();
+  renderQA();
   setTimeout(()=>document.getElementById('qaCard')?.scrollIntoView({behavior:'smooth',block:'nearest'}),320);
 }
+
 function updateStars(n){
   document.querySelectorAll('.sbtn').forEach((b,i)=>b.classList.toggle('lit',i<n));
   const m=document.getElementById('moodLbl');if(m)m.textContent=n?MOODS[n]:'Tap a star to rate ⬆';
 }
+
 function toggleChip(qid,val,el,type){
-  const row=el.closest('.chips-row');
+  const row=el.closest('.chips-row')||el.closest('.chips');
+  if(!row)return;
   if(type==='multi'){
     const arr=Array.isArray(S.ans[qid])?S.ans[qid]:[];
     el.classList.toggle('on');
     S.ans[qid]=el.classList.contains('on')?[...arr,val]:arr.filter(x=>x!==val);
-    return;
+  }else{
+    const wasOn=el.classList.contains('on');
+    row.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
+    if(!wasOn){
+      el.classList.add('on');
+      S.ans[qid]=val;
+    }else{
+      S.ans[qid]='';
+    }
   }
-  row.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
-  el.classList.toggle('on');S.ans[qid]=el.classList.contains('on')?val:'';
+  onAnswerUpdated();
 }
-function setTextAnswer(qid,value){S.ans[qid]=value.trim();}
+
+function setTextAnswer(qid,value){
+  S.ans[qid]=value.trim();
+  onAnswerUpdated();
+}
+
 function selPlat(pid){
   S.plat=pid;
   document.querySelectorAll('.pbtn').forEach(b=>b.classList.toggle('sel',b.dataset.p===pid));
   renderActBtns();toast('Posting on '+(PL[pid]?.n||'Google')+'!','y',PL[pid]?.icon||'🌐');
 }
+
 function switchMode(m){
   S.mode=m;
   document.querySelectorAll('.mtab').forEach(t=>t.classList.toggle('active',t.dataset.m===m));
@@ -477,12 +715,17 @@ function switchMode(m){
   document.getElementById('dirSec').style.display=m==='direct'?'block':'none';
   if(m==='direct')showCard('acCard');renderActBtns();
 }
+
 function showCard(id){
   const el=document.getElementById(id);if(!el)return;
   el.style.display='block';void el.offsetWidth;setTimeout(()=>el.classList.add('in'),20);
   if(id==='acCard')setTimeout(()=>{renderPlatSel();renderActBtns();},30);
 }
-function setRB(h){const el=document.getElementById('rb');if(el)el.innerHTML=h;if(!S.generating&&S.review){const ta=document.getElementById('rta');if(ta)typewrite(ta,S.review);}}
+
+function setRB(h){
+  const el=document.getElementById('rb');if(el)el.innerHTML=h;
+  if(!S.generating&&S.review){const ta=document.getElementById('rta');if(ta)typewrite(ta,S.review);}
+}
 
 function loadH(){return`<div class="dw"><div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div><div class="dlbl">Writing your review…</div></div>`;}
 
@@ -501,28 +744,47 @@ function revH(){
   <div class="wbar-track"><div class="wbar-fill" id="wfill" style="width:${pct}%"></div></div>`;
 }
 
-function qaH(){
-  const fallback=QS[S.biz.type]||QS.other;
-  const qs=(S.biz.questions?.length?S.biz.questions:fallback).filter(q=>q.enabled!==false).sort((a,b)=>(a.order||0)-(b.order||0));
-  const lang=S.biz.languageConfig?.mode==='customer'&&S.biz.languageConfig?.languages?.length
+function renderQA(){
+  const wrap=document.getElementById('qaInner');if(!wrap)return;
+  const fallback=QS[S.biz?.type]||QS.other;
+  const qs=(S.biz?.questions?.length?S.biz.questions:fallback).filter(q=>q&&q.enabled!==false).sort((a,b)=>(a.order||0)-(b.order||0));
+  const lang=S.biz?.languageConfig?.mode==='customer'&&S.biz?.languageConfig?.languages?.length
     ? `<div class="qblock"><div class="qtop"><div class="qnum">🌐</div><div class="qtxt">Which language should your review use?</div></div><select id="langSelect" class="lang-select">${S.biz.languageConfig.languages.map(x=>`<option value="${x.label||x.code}">${x.label||x.code}</option>`).join('')}</select></div>` : '';
+
   const html=qs.map((q,qi)=>{
     const opts=q.options||q.chips||[];
     const type=q.type||'single';
+    const curVal=S.ans[q.id];
     let body='';
-    if(type==='text') body=`<textarea class="qtext" placeholder="Type your answer…" oninput="setTextAnswer('${q.id}',this.value)"></textarea>`;
-    else if(type==='yesno') body=`<div class="chips-row">${['Yes','No'].map((ch,ci)=>`<button class="chip" style="animation-delay:${ci*.03}s" onclick="toggleChip('${q.id}','${ch}',this,'single')">${ch}</button>`).join('')}</div>`;
-    else if(type==='rating') body=`<div class="chips-row">${[1,2,3,4,5].map(n=>`<button class="chip" onclick="toggleChip('${q.id}','${n}/5',this,'single')">${n} ⭐</button>`).join('')}</div>`;
-    else body=`<div class="chips-row">${opts.map((o,ci)=>{const label=typeof o==='string'?o:(o.label||o.value||'');return `<button class="chip" style="animation-delay:${(qi*opts.length+ci)*.03}s" onclick="toggleChip('${q.id}','${String(label).replace(/'/g,"\\'")}',this,'${type}')">${label}</button>`;}).join('')}</div>`;
-    return `<div class="qblock"><div class="qtop"><div class="qnum">${qi+1}</div><div class="qtxt">${q.text||q.q||''}${q.required?'<span style="color:var(--g)"> *</span>':''}</div></div>${body}</div>`;
+    if(type==='text'){
+      body=`<textarea class="qtext" placeholder="Type your answer…" oninput="setTextAnswer('${q.id}',this.value)">${esc(curVal||'')}</textarea>`;
+    }else if(type==='yesno'){
+      body=`<div class="chips-row">${['Yes','No'].map((ch,ci)=>{
+        const sel=curVal===ch?'on':'';
+        return `<button class="chip ${sel}" style="animation-delay:${ci*.03}s" onclick="toggleChip('${q.id}','${ch}',this,'single')">${ch}</button>`;
+      }).join('')}</div>`;
+    }else if(type==='rating'){
+      body=`<div class="chips-row">${[1,2,3,4,5].map(n=>{
+        const sel=curVal===`${n}/5`?'on':'';
+        return `<button class="chip ${sel}" onclick="toggleChip('${q.id}','${n}/5',this,'single')">${n} ⭐</button>`;
+      }).join('')}</div>`;
+    }else{
+      body=`<div class="chips-row">${opts.map((o,ci)=>{
+        const label=typeof o==='string'?o:(o.label||o.value||'');
+        const sel=(type==='multi'?Array.isArray(curVal)&&curVal.includes(label):curVal===label)?'on':'';
+        return `<button class="chip ${sel}" style="animation-delay:${(qi*opts.length+ci)*.03}s" onclick="toggleChip('${q.id}','${String(label).replace(/'/g,"\\'")}',this,'${type}')">${esc(label)}</button>`;
+      }).join('')}</div>`;
+    }
+    return `<div class="qblock"><div class="qtop"><div class="qnum">${qi+1}</div><div class="qtxt">${esc(q.text||q.q||'')}${q.required?'<span style="color:var(--g)"> *</span>':''}</div></div>${body}</div>`;
   }).join('');
-  return lang+html;
+  wrap.innerHTML=lang+html;
 }
 
 function getAvailPlats(){
-  const pids=TPL[S.biz.type]||['google'];
+  const pids=TPL[S.biz?.type]||['google'];
   return pids.filter(pid=>{const p=PL[pid];return p&&p.url(S.biz)!==null;});
 }
+
 function renderPlatSel(){
   const wrap=document.getElementById('platWrap');const pids=getAvailPlats();
   if(!wrap||pids.length<=1){if(wrap)wrap.innerHTML='';return;}
@@ -532,6 +794,7 @@ function renderPlatSel(){
         <span class="pi">${p.icon}</span><span class="pn">${p.n}</span></button>`;
     }).join('')}</div>`;
 }
+
 function renderActBtns(){
   const wrap=document.getElementById('actWrap');const lbl=document.getElementById('actLbl');
   if(!wrap)return;const p=PL[S.plat]||PL.google;
@@ -549,29 +812,18 @@ function esc(value){
   });
 }
 
-function renderQuestions(){
-  const b=S.biz;
-  const wrap=document.getElementById('qaInner');
-  const card=document.getElementById('qaCard');
-  if(!wrap||!card)return;
-  const qs=(Array.isArray(b.questions)?b.questions:[]).filter(q=>q && q.enabled!==false).sort((a,b)=>(a.order??0)-(b.order??0));
-  if(!qs.length){ card.style.display='block'; wrap.innerHTML='<div style="padding:12px 0;color:#777">No custom questions configured for this business.</div>'; return; }
-  wrap.innerHTML=qs.map((q,i)=>{
-    const id=String(q.id||('q'+i));
-    const opts=Array.isArray(q.options)?q.options:[];
-    const type=q.type||'single';
-    if(type==='text') return '<div class="qrow"><div class="qtext">'+esc(q.text||'')+'</div><textarea class="dta" placeholder="Type your answer..." oninput="setTextAnswer(\''+id+'\',this.value)"></textarea></div>';
-    if(type==='yesno') return '<div class="qrow"><div class="qtext">'+esc(q.text||'')+'</div><div class="chips">'+['Yes','No'].map(v=>'<button class="chip" onclick="toggleChip(\''+id+'\',\''+v+'\',this)">'+v+'</button>').join('')+'</div></div>';
-    if(type==='rating') return '<div class="qrow"><div class="qtext">'+esc(q.text||'')+'</div><div class="chips">'+[1,2,3,4,5].map(v=>'<button class="chip" onclick="toggleChip(\''+id+'\',\''+v+'\',this)">'+v+'★</button>').join('')+'</div></div>';
-    return '<div class="qrow"><div class="qtext">'+esc(q.text||'')+'</div><div class="chips">'+opts.map(v=>'<button class="chip" onclick="toggleChip(\''+id+'\',\''+String(v).replace(/'/g,"&#39;")+'\',this,'+(type==='multi'?'true':'false')+')">'+esc(v)+'</button>').join('')+'</div></div>';
-  }).join('');
-}
 function render(){
   const b=S.biz;document.title='Review — '+b.name+' | Zuit';
   pgbar(100);setTimeout(()=>pgbar(0),600);
+  
+  // Instant dismissal of splash for fast mobile feel
+  const splash=document.getElementById('splash');
+  if(splash)splash.classList.add('gone');
+  const appEl=document.getElementById('app');
+  if(appEl)appEl.classList.add('ready');
+
   document.getElementById('skel').style.display='none';
   const ct=document.getElementById('ct');ct.style.display='block';
-  // Questions come from the live API response and are rendered after the business shell is mounted.
   ct.innerHTML=`
     <div class="hero">
       <img src="${b.imageUrl}" alt="${b.name}" onload="this.classList.add('ok')"/>
@@ -596,7 +848,7 @@ function render(){
       <div class="card" id="qaCard" style="display:none">
         <div class="clbl">Tell Us A Bit More</div>
         <div id="qaInner"></div>
-        <button class="btn-gen" onclick="generate()">
+        <button class="btn-gen" id="genBtn" onclick="generate()">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
           Generate My Review
         </button>
@@ -621,14 +873,13 @@ function render(){
     </div>
     <div class="pwrd">Powered by <span>Zuit</span> · AI Review Platform</div>`;
 
-  renderQuestions();
-
   const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');obs.unobserve(e.target);}});},{threshold:.08});
   document.querySelectorAll('.card').forEach(c=>{if(c.style.display!=='none')obs.observe(c);});
 }
 
 function renderErr(msg){
   pgbar(0);document.getElementById('skel').style.display='none';
+  const splash=document.getElementById('splash');if(splash)splash.classList.add('gone');
   const ct=document.getElementById('ct');ct.style.display='block';
   ct.innerHTML=`<div class="err"><div class="erri">🔍</div><div class="errt">Not Found</div><div class="errs">${msg}</div></div>`;
 }
@@ -636,8 +887,23 @@ function renderErr(msg){
 (async()=>{
   const id=bizId();
   if(!id){renderErr('No business ID found in URL.');return;}
-  try{pgbar(15);const d=await fetchBiz(id);S.biz=Object.assign({},d.business,{questions:Array.isArray(d.questions)?d.questions:[]});render();}
-  catch(e){renderErr(e.message||'Could not load.');}
+  try{
+    pgbar(15);
+    const d=await fetchBiz(id);
+    S.biz=Object.assign({},d.business,{questions:Array.isArray(d.questions)?d.questions:[]});
+    render();
+
+    // Auto-select 5-star rating if scanned via QR code or requested via query params
+    const params=new URLSearchParams(location.search);
+    const auto=params.get('auto');
+    const rParam=params.get('rating');
+    const targetRating=rParam?parseInt(rParam,10):(auto?5:0);
+    if(targetRating>=1&&targetRating<=5){
+      setTimeout(()=>selRating(targetRating),120);
+    }
+  }catch(e){
+    renderErr(e.message||'Could not load.');
+  }
 })();
 </script>
 </body>

@@ -188,7 +188,7 @@ body{background:var(--bg);color:var(--white);font-family:var(--ff-body);-webkit-
   <div class="mesh"><div class="orb o1"></div><div class="orb o2"></div></div>
   <div class="login-box">
     <div class="login-logo">Zuit</div>
-    <div class="login-sub">Admin Dashboard &middot; Secure Access</div>
+    <div class="login-sub">Admin Dashboard &middot; Default Password: <code>admin123</code></div>
     <label class="login-lbl">Password</label>
     <input type="password" class="login-inp" id="adminPw" placeholder="Enter admin password"
       onkeydown="if(event.key==='Enter')doLogin()"/>
@@ -296,8 +296,10 @@ How was the service? | Fast, Good, Slow"></textarea><div class="form-hint">These
       <div class="qr-modal-preview"><img id="qrImg" src="" alt="QR"/></div>
       <div class="qr-url-box" id="qrUrlBox">Generating…</div>
       <div class="qr-modal-actions">
-        <button class="btn btn-teal"    onclick="downloadQR()">&#x2B07; Download</button>
+        <button class="btn btn-teal"    onclick="downloadQR()">&#x2B07; PNG</button>
+        <button class="btn btn-outline" onclick="downloadQRSVG()">📐 SVG (Print)</button>
         <button class="btn btn-outline" onclick="copyQRUrl()">&#x1F517; Copy URL</button>
+        <button class="btn btn-outline" onclick="openTestQR()">👁 Test Link</button>
         <button class="btn btn-outline" onclick="closeModal('qrModal')">Close</button>
       </div>
     </div>
@@ -324,7 +326,7 @@ async function adminFetch(url, options) {
   }
   return r;
 }
-var API      = "https://ai-review-system-1.onrender.com/api";
+var API      = window.API_BASE || "/api";
 
 var businesses   = [];
 var currentTab   = "home";
@@ -408,7 +410,7 @@ function renderHome() {
       sc("🏢", businesses.length, "Businesses") +
       sc("💬", totalRev, "Total Reviews") +
       sc("📱", businesses.length, "QR Codes") +
-      sc("🤖", "AI", "Groq Engine") +
+      sc("🤖", "AI", "Gemini AI") +
     "</div>" +
     '<div class="card"><div class="card-label">Quick Actions</div>' +
     '<div style="display:flex;gap:12px;flex-wrap:wrap">' +
@@ -504,6 +506,28 @@ function copyQRUrl() {
   navigator.clipboard.writeText(currentQR.reviewUrl).then(function(){ toast("URL copy ho gaya!", "teal", "🔗"); });
 }
 
+async function downloadQRSVG() {
+  if (!currentQR) return;
+  try {
+    var base = window.location.origin;
+    var r = await adminFetch(API + "/qr/" + currentQR.businessId + "/svg?baseUrl=" + encodeURIComponent(base));
+    var svg = await r.text();
+    var blob = new Blob([svg], { type: "image/svg+xml" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "zuit-qr-" + currentQR.businessId + ".svg";
+    a.click();
+    toast("SVG print file download ho gaya!", "teal", "⬇");
+  } catch(e) {
+    toast("SVG download failed", "coral", "✕");
+  }
+}
+
+function openTestQR() {
+  if (!currentQR) return;
+  window.open(currentQR.reviewUrl, "_blank");
+}
+
 /* ANALYTICS */
 function renderAnalytics() {
   var mc = document.getElementById("mainContent");
@@ -548,7 +572,7 @@ async function loadReviews(filter) {
     var url = API + "/reviews";
     if (reviewFilter === "positive") url += "?type=positive";
     else if (reviewFilter === "negative") url += "?type=negative";
-    var r = await fetch(url);
+    var r = await adminFetch(url);
     var d = await r.json();
     allReviews = d.reviews || [];
     renderReviewsPage(d.stats || {});
@@ -731,7 +755,7 @@ async function addBusiness() {
     localLanguages: document.getElementById("f-local").value.split(",").map(function(x){return x.trim()}).filter(Boolean),
     businessProfile:{summary:document.getElementById("f-summary").value.trim(),services:document.getElementById("f-services").value.split(",").map(function(x){return x.trim()}).filter(Boolean),specialties:document.getElementById("f-specialties").value.split(",").map(function(x){return x.trim()}).filter(Boolean),amenities:document.getElementById("f-amenities").value.split(",").map(function(x){return x.trim()}).filter(Boolean),targetAudience:document.getElementById("f-audience").value.trim(),differentiators:document.getElementById("f-diff").value.split(",").map(function(x){return x.trim()}).filter(Boolean),reviewFocus:document.getElementById("f-focus").value.split(",").map(function(x){return x.trim()}).filter(Boolean),localContext:document.getElementById("f-context").value.trim(),avoidClaims:document.getElementById("f-avoid").value.split(",").map(function(x){return x.trim()}).filter(Boolean),aiInstructions:document.getElementById("f-ai").value.trim()},
     languageConfig:{mode:document.getElementById("f-langmode").value,languages:document.getElementById("f-langs").value.split(",").map(function(x){var p=x.split(":");return {code:p[0].trim().toLowerCase().replace(/\s+/g,"_"),label:p[0].trim(),weight:Number(p[1]||0)}}).filter(function(x){return x.label})},
-    reviewConfig:{minWords:Number(document.getElementById("f-min").value||18),maxWords:Number(document.getElementById("f-max").value||45),tone:document.getElementById("f-tone").value.trim(),style:document.getElementById("f-style").value.trim(),emoji:false,customInstructions:document.getElementById("f-ai").value.trim()},
+    reviewConfig:{minWords:Number(document.getElementById("f-min").value||18),maxWords:Number(document.getElementById("f-max").value||60),tone:document.getElementById("f-tone").value.trim(),style:document.getElementById("f-style").value.trim(),emoji:true,customInstructions:document.getElementById("f-ai").value.trim()},
     subscription:{plan:document.getElementById("f-plan").value,status:"trial",startDate:document.getElementById("f-start").value||new Date().toISOString(),endDate:document.getElementById("f-end").value||new Date(Date.now()+30*24*60*60*1000).toISOString(),reviewLimit:Number(document.getElementById("f-limit").value||1000),reviewsUsed:0},
     questions:document.getElementById("f-questions").value.split("\n").map(function(line,i){var p=line.split("|"),text=(p[0]||"").trim(),opts=(p[1]||"").split(",").map(function(x){return x.trim()}).filter(Boolean);return {id:"q"+(i+1),text:text,type:"single",required:false,enabled:true,order:i,options:opts.map(function(x){return {label:x,value:x,sentiment:""}})}}).filter(function(q){return q.text})
   };

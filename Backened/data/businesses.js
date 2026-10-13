@@ -1,6 +1,13 @@
-// data/businesses.js — Seed data + Mongoose model
+// data/businesses.js — Seed data + Mongoose model with in-memory offline fallback
 
 const mongoose = require('mongoose');
+
+// CRITICAL: fail fast if MongoDB is not connected, do not hang
+try {
+  mongoose.set('bufferCommands', false);
+} catch (e) {
+  // ignore if already configured
+}
 
 // ── Schema ──────────────────────────────────────────────────────────────────
 const QuestionOptionSchema = new mongoose.Schema({
@@ -38,7 +45,6 @@ const BusinessSchema = new mongoose.Schema({
   city:         { type: String, default: '' },
   localLanguages: { type: [String], default: [] },
 
-  // Detailed business knowledge used by Zuit AI to write context-aware reviews.
   businessProfile: {
     summary: { type: String, default: '' },
     services: { type: [String], default: [] },
@@ -63,10 +69,10 @@ const BusinessSchema = new mongoose.Schema({
 
   reviewConfig: {
     minWords: { type: Number, default: 18 },
-    maxWords: { type: Number, default: 45 },
+    maxWords: { type: Number, default: 60 },
     tone: { type: String, default: 'natural, conversational and genuine' },
-    style: { type: String, default: 'short, everyday customer review' },
-    emoji: { type: Boolean, default: false },
+    style: { type: String, default: 'short to detailed customer review' },
+    emoji: { type: Boolean, default: true },
     customInstructions: { type: String, default: '' }
   },
 
@@ -86,7 +92,7 @@ const BusinessSchema = new mongoose.Schema({
   createdAt:    { type: Date, default: Date.now }
 });
 
-const Business = mongoose.model('Business', BusinessSchema);
+const MongooseBusiness = mongoose.model('Business', BusinessSchema);
 
 // ── Analytics Schema ─────────────────────────────────────────────────────────
 const AnalyticsSchema = new mongoose.Schema({
@@ -99,7 +105,22 @@ const AnalyticsSchema = new mongoose.Schema({
   userAgent:    { type: String }
 });
 
-const Analytics = mongoose.model('Analytics', AnalyticsSchema);
+const MongooseAnalytics = mongoose.model('Analytics', AnalyticsSchema);
+
+// ── Review Schema ───────────────────────────────────────────────────────────
+const ReviewSchema = new mongoose.Schema({
+  businessId:   { type: String, ref: 'Business', required: true },
+  businessName: { type: String, default: '' },
+  rating:       { type: Number, required: true },
+  reviewText:   { type: String, default: '' },
+  chips:        { type: [String], default: [] },
+  type:         { type: String, enum: ['positive', 'negative'], required: true },
+  sentToGoogle: { type: Boolean, default: false },
+  userAgent:    { type: String, default: '' },
+  timestamp:    { type: Date, default: Date.now }
+});
+
+const MongooseReview = mongoose.model('Review', ReviewSchema);
 
 // ── Seed data ────────────────────────────────────────────────────────────────
 const SEED_BUSINESSES = [
@@ -189,21 +210,317 @@ const SEED_BUSINESSES = [
   }
 ];
 
-// (export moved below)
+// ── In-Memory Database Store (Active when MongoDB is not connected) ──────────
+const inMemoryStore = {
+  businesses: new Map(),
+  analytics: [],
+  reviews: []
+};
 
-// ── Review Schema (negative + positive both saved to MongoDB) ─────────────────
-const ReviewSchema = new mongoose.Schema({
-  businessId:   { type: String, ref: 'Business', required: true },
-  businessName: { type: String, default: '' },
-  rating:       { type: Number, required: true },
-  reviewText:   { type: String, default: '' },
-  chips:        { type: [String], default: [] },
-  type:         { type: String, enum: ['positive', 'negative'], required: true },
-  sentToGoogle: { type: Boolean, default: false },
-  userAgent:    { type: String, default: '' },
-  timestamp:    { type: Date, default: Date.now }
+// Initialize in-memory businesses
+SEED_BUSINESSES.forEach(b => {
+  const clone = JSON.parse(JSON.stringify(b));
+  clone.toObject = function() { return { ...this }; };
+  inMemoryStore.businesses.set(b._id, clone);
 });
 
-const Review = mongoose.model('Review', ReviewSchema);
+// Seed a few sample reviews in memory
+inMemoryStore.reviews.push(
+  {
+    _id: 'rev-001',
+    businessId: 'spice-garden-001',
+    businessName: 'Spice Garden',
+    rating: 5,
+    reviewText: 'The Dal Makhani and Garlic Naan were exceptional! Prompt service and wonderful ambiance.',
+    chips: ['Dal Makhani', 'Outstanding', 'Lightning fast'],
+    type: 'positive',
+    sentToGoogle: true,
+    timestamp: new Date(Date.now() - 3600000),
+    userAgent: 'Mozilla/5.0'
+  },
+  {
+    _id: 'rev-002',
+    businessId: 'taj-palace-002',
+    businessName: 'Taj Palace Hotel',
+    rating: 5,
+    reviewText: 'World-class hospitality and spotless heritage suites. Will definitely stay again.',
+    chips: ['Luxurious', 'Spotless', 'Exceptional'],
+    type: 'positive',
+    sentToGoogle: true,
+    timestamp: new Date(Date.now() - 7200000),
+    userAgent: 'Mozilla/5.0'
+  }
+);
 
-module.exports = { Business, Analytics, Review, SEED_BUSINESSES };
+function isDbConnected() {
+  return mongoose.connection && mongoose.connection.readyState === 1;
+}
+
+// ── Business Proxy ──────────────────────────────────────────────────────────
+const Business = function(doc) {
+  if (isDbConnected()) {
+    return new MongooseBusiness(doc);
+  }
+  const self = {
+    ...doc,
+    _id: doc._id || doc.id,
+    toObject: function() { return { ...self }; },
+    save: async function() {
+      inMemoryStore.businesses.set(self._id, self);
+      return self;
+    }
+  };
+  return self;
+};
+
+Business.findById = async function(id) {
+  if (isDbConnected()) {
+    try {
+      return await MongooseBusiness.findById(id);
+    } catch (err) {
+      console.warn('[AI Studio] MongoDB query failed, falling back to memory:', err.message);
+    }
+  }
+  const b = inMemoryStore.businesses.get(id);
+  if (!b) return null;
+  return { ...b, toObject: () => ({ ...b }) };
+};
+
+Business.find = async function(filter, projection) {
+  if (isDbConnected()) {
+    try {
+      return await MongooseBusiness.find(filter, projection);
+    } catch (err) {
+      console.warn('[AI Studio] MongoDB query failed, falling back to memory:', err.message);
+    }
+  }
+  return Array.from(inMemoryStore.businesses.values());
+};
+
+Business.countDocuments = async function() {
+  if (isDbConnected()) {
+    try {
+      return await MongooseBusiness.countDocuments();
+    } catch (err) {
+      console.warn('[AI Studio] MongoDB query failed, falling back to memory:', err.message);
+    }
+  }
+  return inMemoryStore.businesses.size;
+};
+
+Business.insertMany = async function(docs) {
+  if (isDbConnected()) {
+    try {
+      return await MongooseBusiness.insertMany(docs);
+    } catch (err) {
+      console.warn('[AI Studio] MongoDB query failed, falling back to memory:', err.message);
+    }
+  }
+  docs.forEach(d => {
+    const item = { ...d, toObject: () => ({ ...d }) };
+    inMemoryStore.businesses.set(d._id, item);
+  });
+  return docs;
+};
+
+Business.findByIdAndUpdate = async function(id, patch, opts) {
+  if (isDbConnected()) {
+    try {
+      return await MongooseBusiness.findByIdAndUpdate(id, patch, opts);
+    } catch (err) {
+      console.warn('[AI Studio] MongoDB query failed, falling back to memory:', err.message);
+    }
+  }
+  const existing = inMemoryStore.businesses.get(id);
+  if (!existing) return null;
+
+  // Handle $inc
+  if (patch.$inc) {
+    for (const [k, v] of Object.entries(patch.$inc)) {
+      if (k.includes('.')) {
+        const parts = k.split('.');
+        existing[parts[0]] = existing[parts[0]] || {};
+        existing[parts[0]][parts[1]] = (existing[parts[0]][parts[1]] || 0) + v;
+      } else {
+        existing[k] = (existing[k] || 0) + v;
+      }
+    }
+    delete patch.$inc;
+  }
+  Object.assign(existing, patch);
+  return { ...existing, toObject: () => ({ ...existing }) };
+};
+
+Business.findOneAndUpdate = async function(query, update, opts) {
+  if (isDbConnected()) {
+    try {
+      return await MongooseBusiness.findOneAndUpdate(query, update, opts);
+    } catch (err) {
+      console.warn('[AI Studio] MongoDB query failed, falling back to memory:', err.message);
+    }
+  }
+  const id = query._id;
+  const existing = inMemoryStore.businesses.get(id);
+  if (!existing) return null;
+  if (update.$inc) {
+    for (const [k, v] of Object.entries(update.$inc)) {
+      if (k.includes('.')) {
+        const parts = k.split('.');
+        existing[parts[0]] = existing[parts[0]] || {};
+        existing[parts[0]][parts[1]] = (existing[parts[0]][parts[1]] || 0) + v;
+      } else {
+        existing[k] = (existing[k] || 0) + v;
+      }
+    }
+  }
+  return { ...existing, toObject: () => ({ ...existing }) };
+};
+
+Business.findByIdAndDelete = async function(id) {
+  if (isDbConnected()) {
+    try {
+      return await MongooseBusiness.findByIdAndDelete(id);
+    } catch (err) {
+      console.warn('[AI Studio] MongoDB query failed, falling back to memory:', err.message);
+    }
+  }
+  const b = inMemoryStore.businesses.get(id);
+  inMemoryStore.businesses.delete(id);
+  return b;
+};
+
+// ── Analytics Proxy ─────────────────────────────────────────────────────────
+const Analytics = function(doc) {
+  if (isDbConnected()) {
+    return new MongooseAnalytics(doc);
+  }
+  const self = {
+    ...doc,
+    _id: 'an-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+    timestamp: new Date(),
+    save: async function() {
+      inMemoryStore.analytics.push(self);
+      return self;
+    }
+  };
+  return self;
+};
+
+Analytics.find = async function(filter) {
+  if (isDbConnected()) {
+    try {
+      return await MongooseAnalytics.find(filter);
+    } catch (err) {
+      console.warn('[AI Studio] MongoDB query failed, falling back to memory:', err.message);
+    }
+  }
+  return inMemoryStore.analytics.filter(a => !filter.businessId || a.businessId === filter.businessId);
+};
+
+Analytics.deleteMany = async function(filter) {
+  if (isDbConnected()) {
+    try {
+      return await MongooseAnalytics.deleteMany(filter);
+    } catch (err) {
+      console.warn('[AI Studio] MongoDB query failed, falling back to memory:', err.message);
+    }
+  }
+  const before = inMemoryStore.analytics.length;
+  inMemoryStore.analytics = inMemoryStore.analytics.filter(a => filter.businessId && a.businessId !== filter.businessId);
+  return { deletedCount: before - inMemoryStore.analytics.length };
+};
+
+// ── Review Proxy ────────────────────────────────────────────────────────────
+const Review = function(doc) {
+  if (isDbConnected()) {
+    return new MongooseReview(doc);
+  }
+  const self = {
+    ...doc,
+    _id: 'rev-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+    timestamp: new Date(),
+    save: async function() {
+      inMemoryStore.reviews.push(self);
+      return self;
+    }
+  };
+  return self;
+};
+
+Review.find = function(filter, projection) {
+  if (isDbConnected()) {
+    try {
+      return MongooseReview.find(filter, projection);
+    } catch (err) {
+      console.warn('[AI Studio] MongoDB query failed, falling back to memory:', err.message);
+    }
+  }
+  const f = filter || {};
+  let list = inMemoryStore.reviews.filter(r => {
+    if (f.type && r.type !== f.type) return false;
+    if (f.businessId && r.businessId !== f.businessId) return false;
+    return true;
+  }).slice();
+
+  const queryObj = {
+    _list: list,
+    sort: function(sortOpts) {
+      this._list.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+      return this;
+    },
+    limit: function(lim) {
+      this._list = this._list.slice(0, lim);
+      return this;
+    },
+    then: function(resolve, reject) {
+      return Promise.resolve(this._list).then(resolve, reject);
+    }
+  };
+  return queryObj;
+};
+
+Review.countDocuments = async function(filter = {}) {
+  if (isDbConnected()) {
+    try {
+      return await MongooseReview.countDocuments(filter);
+    } catch (err) {
+      console.warn('[AI Studio] MongoDB query failed, falling back to memory:', err.message);
+    }
+  }
+  return inMemoryStore.reviews.filter(r => {
+    if (filter.type && r.type !== filter.type) return false;
+    if (filter.businessId && r.businessId !== filter.businessId) return false;
+    return true;
+  }).length;
+};
+
+Review.findByIdAndDelete = async function(id) {
+  if (isDbConnected()) {
+    try {
+      return await MongooseReview.findByIdAndDelete(id);
+    } catch (err) {
+      console.warn('[AI Studio] MongoDB query failed, falling back to memory:', err.message);
+    }
+  }
+  const idx = inMemoryStore.reviews.findIndex(r => r._id === id);
+  if (idx !== -1) {
+    const deleted = inMemoryStore.reviews.splice(idx, 1)[0];
+    return deleted;
+  }
+  return null;
+};
+
+Review.deleteMany = async function(filter = {}) {
+  if (isDbConnected()) {
+    try {
+      return await MongooseReview.deleteMany(filter);
+    } catch (err) {
+      console.warn('[AI Studio] MongoDB query failed, falling back to memory:', err.message);
+    }
+  }
+  const count = inMemoryStore.reviews.length;
+  inMemoryStore.reviews = [];
+  return { deletedCount: count };
+};
+
+module.exports = { Business, Analytics, Review, SEED_BUSINESSES, isDbConnected };

@@ -1,0 +1,7 @@
+{
+  "name": "Zuit — AI Google Review QR & AR Menu",
+  "description": "Zuit helps restaurants, hotels & salons get genuine Google reviews in 5 seconds using AI-powered QR codes.",
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
