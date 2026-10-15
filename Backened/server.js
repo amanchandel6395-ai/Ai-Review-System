@@ -217,7 +217,8 @@ app.use('/api/', generalLimiter);
 // ── Authentication Route ─────────────────────────────────────────────────────
 app.post('/api/admin/login', adminLoginLimiter, (req, res) => {
   const password = String(req.body?.password || '');
-  const candidates = [ADMIN_PASSWORD, 'admin123', 'admin'].filter(Boolean);
+  // If custom ADMIN_PASSWORD is set in environment, only allow that strong password.
+  const candidates = process.env.ADMIN_PASSWORD ? [process.env.ADMIN_PASSWORD] : ['admin123'];
   const valid = candidates.some(cand => {
     try {
       const expected = Buffer.from(cand);
