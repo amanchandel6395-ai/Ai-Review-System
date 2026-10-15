@@ -37,6 +37,7 @@ const BusinessSchema = new mongoose.Schema({
   description:  { type: String, default: '' },
   imageUrl:     { type: String, default: '' },
   googlePlaceId:{ type: String, default: '' },
+  googleReviewUrl:{ type: String, default: '' },
   address:      { type: String, default: '' },
   phone:        { type: String, default: '' },
 
@@ -334,9 +335,12 @@ Business.findByIdAndUpdate = async function(id, patch, opts) {
   const existing = inMemoryStore.businesses.get(id);
   if (!existing) return null;
 
+  const toApply = Object.assign({}, patch.$set || {}, patch);
+  delete toApply.$set;
+
   // Handle $inc
-  if (patch.$inc) {
-    for (const [k, v] of Object.entries(patch.$inc)) {
+  if (toApply.$inc) {
+    for (const [k, v] of Object.entries(toApply.$inc)) {
       if (k.includes('.')) {
         const parts = k.split('.');
         existing[parts[0]] = existing[parts[0]] || {};
@@ -345,9 +349,25 @@ Business.findByIdAndUpdate = async function(id, patch, opts) {
         existing[k] = (existing[k] || 0) + v;
       }
     }
-    delete patch.$inc;
+    delete toApply.$inc;
   }
-  Object.assign(existing, patch);
+
+  for (const [k, v] of Object.entries(toApply)) {
+    if (k.includes('.')) {
+      const parts = k.split('.');
+      let curr = existing;
+      for (let i = 0; i < parts.length - 1; i++) {
+        curr[parts[i]] = curr[parts[i]] || {};
+        curr = curr[parts[i]];
+      }
+      curr[parts[parts.length - 1]] = v;
+    } else if (typeof v === 'object' && v !== null && !Array.isArray(v) && typeof existing[k] === 'object' && existing[k] !== null && !Array.isArray(existing[k])) {
+      existing[k] = Object.assign({}, existing[k], v);
+    } else {
+      existing[k] = v;
+    }
+  }
+
   return { ...existing, toObject: () => ({ ...existing }) };
 };
 

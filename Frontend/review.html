@@ -416,7 +416,17 @@ function humanReview(rating, type, name, ans, prevReview, requestedLang){
 let S = { biz: null, rating: 0, ans: {}, review: '', mode: 'ai', generating: false, plat: 'google', regenCount: 0 };
 
 const PL = {
-  google: { n: 'Google', icon: '🌐', url: b => b?.googleReviewUrl || (b?.googlePlaceId ? `https://search.google.com/local/writereview?placeid=${b.googlePlaceId}` : 'https://www.google.com') },
+  google: {
+    n: 'Google',
+    icon: '🌐',
+    url: b => {
+      if (b?.googleReviewUrl && b.googleReviewUrl.trim()) return b.googleReviewUrl.trim();
+      if (b?.googlePlaceId && b.googlePlaceId.trim()) return `https://search.google.com/local/writereview?placeid=${b.googlePlaceId.trim()}`;
+      const name = b?.name || 'business';
+      const city = b?.city || '';
+      return `https://www.google.com/search?q=${encodeURIComponent(name + ' ' + city + ' review')}`;
+    }
+  },
   zomato: { n: 'Zomato', icon: '🍕', url: b => b.platforms?.zomato ? `https://www.zomato.com/restaurant/${b.platforms.zomato}/reviews` : null },
   swiggy: { n: 'Swiggy', icon: '🛵', url: b => b.platforms?.swiggy ? `https://www.swiggy.com/restaurants/${b.platforms.swiggy}` : null },
   oyo: { n: 'OYO', icon: '🏠', url: b => b.platforms?.oyo ? `https://www.oyorooms.com/hotels/${b.platforms.oyo}#reviews` : null },
@@ -456,7 +466,21 @@ function toast(msg,type,icon){
   document.getElementById('tm').textContent=msg;
   clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('show'),3200);
 }
-function bizId(){const p=location.pathname.split('/');return p[p.indexOf('review')+1]||null}
+function bizId(){
+  const params=new URLSearchParams(location.search);
+  const qId=params.get('id')||params.get('business')||params.get('b')||params.get('businessId');
+  if(qId)return qId.trim();
+  const pathParts=location.pathname.split('/').filter(Boolean);
+  const revIdx=pathParts.findIndex(p=>p.toLowerCase().startsWith('review'));
+  if(revIdx!==-1&&pathParts[revIdx+1]){
+    return pathParts[revIdx+1].replace(/\.html$/i,'').trim();
+  }
+  const last=pathParts[pathParts.length-1];
+  if(last&&!last.includes('review')&&!last.includes('.html')){
+    return last.trim();
+  }
+  return null;
+}
 function wc(t){return t.trim()?t.trim().split(/\s+/).length:0}
 function getAns(){return Object.values(S.ans).flatMap(v=>Array.isArray(v)?v:(v?[v]:[])).filter(Boolean)}
 function getQA(){

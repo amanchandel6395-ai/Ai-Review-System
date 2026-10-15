@@ -266,7 +266,8 @@ body{background:var(--bg);color:var(--white);font-family:var(--ff-body);-webkit-
         <div class="fg full"><label>Business Name *</label><input id="f-name" placeholder="Spice Garden"/></div>
         <div class="fg full"><label>Description</label><textarea id="f-desc" placeholder="1-2 sentences…"></textarea></div>
         <div class="fg full"><label>Image URL</label><input id="f-img" placeholder="https://images.unsplash.com/…"/></div>
-        <div class="fg full"><label>Google Place ID *</label><input id="f-place" placeholder="ChIJN1t_tDeuEmsRUsoyG83frY4"/><div class="form-hint">Google Maps &rarr; Share &rarr; copy Place ID</div></div>
+        <div class="fg full"><label>Google Review Link (Direct URL)</label><input id="f-revurl" placeholder="https://g.page/r/.../review or https://maps.app.goo.gl/..."/><div class="form-hint">Direct link for customers to post review. Highly recommended!</div></div>
+        <div class="fg full"><label>Google Place ID</label><input id="f-place" placeholder="ChIJN1t_tDeuEmsRUsoyG83frY4"/><div class="form-hint">Google Place ID (optional if Google Review Link is given above)</div></div>
         <div class="fg"><label>Address</label><input id="f-addr" placeholder="123 Main St"/></div>
         <div class="fg"><label>Phone</label><input id="f-phone" placeholder="+91-98765-43210"/></div>
         <div class="fg"><label>Country</label><input id="f-country" value="India"/></div>
@@ -292,7 +293,8 @@ body{background:var(--bg);color:var(--white);font-family:var(--ff-body);-webkit-
         <div class="fg"><label>Review Limit</label><input id="f-limit" type="number" value="1000"/></div>
         <div class="fg"><label>Subscription Start</label><input id="f-start" type="date"/></div>
         <div class="fg"><label>Subscription End</label><input id="f-end" type="date"/></div>
-        <div class="fg"><label>Plan</label><select id="f-plan"><option>trial</option><option>basic</option><option>pro</option><option>enterprise</option></select></div>
+        <div class="fg"><label>Plan</label><select id="f-plan"><option value="trial">trial</option><option value="basic">basic</option><option value="pro">pro</option><option value="enterprise">enterprise</option></select></div>
+        <div class="fg"><label>Subscription Status</label><select id="f-status"><option value="active" selected>Active (Start Now)</option><option value="trial">Trial</option><option value="suspended">Closed / Paused</option></select></div>
         <div class="fg full"><label>Custom Questions — one per line: Question | Option 1, Option 2, Option 3</label><textarea id="f-questions" placeholder="What did you try? | Biryani, Kebabs, Curry
 How was the taste? | Excellent, Good, Average, Poor
 How was the service? | Fast, Good, Slow"></textarea><div class="form-hint">These questions will appear automatically on the customer review page.</div></div>
@@ -591,6 +593,31 @@ function sc(icon, val, lbl) {
   return '<div class="stat-card"><div class="stat-icon">' + icon + '</div><div class="stat-val">' + val + '</div><div class="stat-lbl">' + lbl + '</div></div>';
 }
 
+
+async function toggleSubscription(id, newStatus) {
+  var actionText = newStatus === "active" ? "start / activate" : "pause / close";
+  if (!confirm("Are you sure you want to " + actionText + " the subscription for this business?")) return;
+  try {
+    var r = await adminFetch(API + "/business/" + encodeURIComponent(id) + "/subscription", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: newStatus })
+    });
+    if (!r.ok) {
+      r = await adminFetch(API + "/business/" + encodeURIComponent(id), {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subscription: { status: newStatus } })
+      });
+    }
+    toast("Subscription " + (newStatus === "active" ? "Activated (Started) ✓" : "Closed / Paused ✓"), "teal", newStatus === "active" ? "▶" : "⏸");
+    await loadBiz();
+    renderBiz();
+  } catch(e) {
+    toast("Update failed: " + (e.message || "Network error"), "coral", "✕");
+  }
+}
+
 /* BUSINESSES */
 function renderBiz() {
   var mc = document.getElementById("mainContent");
@@ -605,16 +632,53 @@ function renderBiz() {
 }
 
 function bizRowHTML(b) {
-  var name = b.name.replace(/'/g, "\\'");
+  var name = (b.name || "").replace(/'/g, "\\'");
+  var sub = b.subscription || {};
+  var subStatus = sub.status || "trial";
+  var isSuspended = subStatus === "suspended";
+  var isExpired = subStatus === "expired" || (sub.endDate && new Date(sub.endDate) < new Date());
+  var isActive = !isSuspended && !isExpired;
+
+  var subBadge = isActive
+    ? (subStatus === "trial"
+        ? '<span class="rev-badge" style="background:rgba(255,184,0,.15);color:#ffb800;border:1px solid rgba(255,184,0,.3);font-size:11px;padding:3px 9px;border-radius:100px;font-weight:600">🟡 Trial</span>'
+        : '<span class="rev-badge pos" style="font-size:11px;padding:3px 9px;border-radius:100px;font-weight:600">🟢 Active</span>')
+    : (isSuspended
+        ? '<span class="rev-badge neg" style="font-size:11px;padding:3px 9px;border-radius:100px;font-weight:600">🔴 Closed / Paused</span>'
+        : '<span class="rev-badge" style="background:rgba(150,150,150,.15);color:#aaa;border:1px solid rgba(150,150,150,.3);font-size:11px;padding:3px 9px;border-radius:100px;font-weight:600">⚪ Expired</span>');
+
+  var toggleSubBtn = isActive
+    ? '<button class="btn btn-outline" style="color:var(--coral);border-color:rgba(255,90,53,.35);font-size:12px;padding:6px 12px" onclick="toggleSubscription(\'' + b._id + '\',\'suspended\')" title="Pause review collection">⏸ Pause / Close</button>'
+    : '<button class="btn btn-teal" style="font-size:12px;padding:6px 12px" onclick="toggleSubscription(\'' + b._id + '\',\'active\')" title="Start review collection">▶ Start / Activate</button>';
+
+  var hasGoogle = !!(b.googleReviewUrl || b.googlePlaceId);
+  var gBadge = hasGoogle
+    ? '<span style="font-size:11px;color:var(--teal)">🌐 Google Linked ✓</span>'
+    : '<span style="font-size:11px;color:var(--coral)">⚠️ Missing Google Link</span>';
+
+  var locationText = b.city ? ('📍 ' + b.city) : '';
+
   return '<div class="biz-row">' +
-    '<div class="biz-emoji">' + (ICONS[b.type]||"⭐") + "</div>" +
-    '<div class="biz-info"><div class="biz-name">' + b.name + "</div>" +
-    '<div class="biz-meta"><span>📂 ' + b.type + "</span><span>🔑 " + b._id + "</span><span>💬 " + (b.reviewCount||0) + "</span></div></div>" +
+    '<div class="biz-emoji">' + (ICONS[b.type]||"⭐") + '</div>' +
+    '<div class="biz-info">' +
+      '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
+        '<div class="biz-name">' + esc(b.name) + '</div>' +
+        subBadge +
+      '</div>' +
+      '<div class="biz-meta">' +
+        '<span>📂 ' + b.type + '</span>' +
+        '<span>🔑 ' + b._id + '</span>' +
+        (locationText ? '<span>' + locationText + '</span>' : '') +
+        '<span>💬 ' + (b.reviewCount||0) + ' reviews</span>' +
+        '<span>' + gBadge + '</span>' +
+      '</div>' +
+    '</div>' +
     '<div class="biz-actions">' +
-      '<button class="btn btn-outline" onclick="showQR(\'' + b._id + "','" + name + '\')">📱 QR</button>' +
+      toggleSubBtn +
+      '<button class="btn btn-outline" onclick="showQR(\'' + b._id + '\',\'' + name + '\')">📱 QR</button>' +
       '<button class="btn btn-outline" onclick="openSettings(\'' + b._id + '\')">⚙ Settings</button>' +
-      '<button class="btn btn-outline" onclick="window.open(\'/review/' + b._id + "','_blank')\">👁</button>" +
-    "</div></div>";
+      '<button class="btn btn-outline" onclick="window.open(\'/review/' + b._id + '\',\'_blank\')">👁</button>' +
+    '</div></div>';
 }
 
 /* QR */
@@ -874,7 +938,7 @@ function renderSettings(b){
  '<div class="fg"><label>Differentiators</label><textarea id="s-diff">'+esc((b.businessProfile?.differentiators||[]).join(", "))+'</textarea></div><div class="fg"><label>Review Focus</label><input id="s-focus" value="'+esc((b.businessProfile?.reviewFocus||[]).join(", "))+'"></div>'+
  '<div class="fg"><label>Local Context</label><input id="s-context" value="'+esc(b.businessProfile?.localContext||"")+'"></div><div class="fg"><label>Avoid Claims</label><textarea id="s-avoid">'+esc((b.businessProfile?.avoidClaims||[]).join(", "))+'</textarea></div>'+
  '<div class="fg full"><label>Extra AI Instructions</label><textarea id="s-ai-profile">'+esc(b.businessProfile?.aiInstructions||"")+'</textarea></div>'+
- '<div class="fg"><label>Google Place ID</label><input id="s-place" value="'+esc(b.googlePlaceId||"")+'"></div><div class="fg"><label>Image URL</label><input id="s-img" value="'+esc(b.imageUrl||"")+'"></div>'+
+ '<div class="fg"><label>Google Review Link (Direct URL)</label><input id="s-revurl" value="'+esc(b.googleReviewUrl||"")+'" placeholder="https://g.page/r/.../review or https://maps.app.goo.gl/..."></div><div class="fg"><label>Google Place ID</label><input id="s-place" value="'+esc(b.googlePlaceId||"")+'" placeholder="ChIJN1t_tDeuEmsRUsoyG83frY4"></div><div class="fg full"><label>Image URL</label><input id="s-img" value="'+esc(b.imageUrl||"")+'"></div>'+
  '<div class="fg"><label>Language Mode</label><select id="s-langmode"><option value="fixed">Fixed by admin</option><option value="weighted">Weighted</option><option value="random">Random</option><option value="customer">Customer chooses</option></select></div>'+
  '<div class="fg"><label>Languages & weights</label><div id="langRows">'+langs.map(function(x){return '<div class="lang-row"><input class="sl-lang" value="'+esc(x.label||x.code)+'"><input class="sl-weight" type="number" value="'+(x.weight??0)+'"></div>'}).join("")+'</div><button class="mini-btn" onclick="addLang()">+ Language</button></div>'+
  '<div class="fg"><label>Min Words</label><input type="number" id="s-min" value="'+(b.reviewConfig?.minWords||18)+'"></div><div class="fg"><label>Max Words</label><input type="number" id="s-max" value="'+(b.reviewConfig?.maxWords||45)+'"></div>'+
@@ -889,11 +953,18 @@ function renderSettings(b){
  document.querySelectorAll(".q-editor").forEach(function(el,i){el.querySelector(".q-type").value=settingsQuestions[i]?.type||"single";});
 }
 function addLang(){document.getElementById("langRows").insertAdjacentHTML("beforeend",'<div class="lang-row"><input class="sl-lang" placeholder="Hindi"><input class="sl-weight" type="number" value="0"></div>');}
+
+function quickSetSub(st) {
+  var sel = document.getElementById("s-status");
+  if (sel) sel.value = st;
+  toast("Status set to " + st + ". Click 'Save All' to apply.", "teal", "✓");
+}
+
 function addQuestion(){var id="q"+Date.now();settingsQuestions.push({id:id});document.getElementById("questionList").insertAdjacentHTML("beforeend",'<div class="q-editor" data-qid="'+id+'"><div style="display:flex;justify-content:space-between;align-items:center"><label>New Question</label><button class="mini-btn" onclick="this.closest(\'.q-editor\').remove()">Remove</button></div><div class="fg" style="margin-top:8px"><label>Question</label><input class="q-text" placeholder="How was the service?"></div><div class="fg" style="margin-top:8px"><label>Type</label><select class="q-type"><option value="single">Single choice</option><option value="multi">Multiple choice</option><option value="yesno">Yes/No</option><option value="rating">Rating</option><option value="text">Short text</option></select></div><div class="fg" style="margin-top:8px"><label>Options</label><input class="q-opts" placeholder="Good, Excellent, Average"></div></div>');}
 function collectSettingsQuestions(){return Array.from(document.querySelectorAll(".q-editor")).map(function(el,i){var opts=el.querySelector(".q-opts").value.split(",").map(function(x){return x.trim()}).filter(Boolean);return {id:el.dataset.qid||("q"+Date.now()+i),text:el.querySelector(".q-text").value.trim(),type:el.querySelector(".q-type").value,required:false,enabled:el.querySelector(".q-enabled")?el.querySelector(".q-enabled").checked:true,order:i,options:opts.map(function(x){return {label:x,value:x,sentiment:""}})};}).filter(function(q){return q.text});}
 async function saveSettings(){
  var langs=Array.from(document.querySelectorAll(".lang-row")).map(function(r){var label=r.querySelector(".sl-lang").value.trim();return {code:label.toLowerCase().replace(/\s+/g,"_"),label:label,weight:Number(r.querySelector(".sl-weight").value||0)}}).filter(function(x){return x.label});
- var body={name:document.getElementById("s-name").value.trim(),type:document.getElementById("s-type").value,description:document.getElementById("s-desc").value.trim(),businessProfile:{summary:document.getElementById("s-summary").value.trim(),services:document.getElementById("s-services").value.split(",").map(function(x){return x.trim()}).filter(Boolean),specialties:document.getElementById("s-specialties").value.split(",").map(function(x){return x.trim()}).filter(Boolean),amenities:document.getElementById("s-amenities").value.split(",").map(function(x){return x.trim()}).filter(Boolean),targetAudience:document.getElementById("s-audience").value.trim(),differentiators:document.getElementById("s-diff").value.split(",").map(function(x){return x.trim()}).filter(Boolean),reviewFocus:document.getElementById("s-focus").value.split(",").map(function(x){return x.trim()}).filter(Boolean),localContext:document.getElementById("s-context").value.trim(),avoidClaims:document.getElementById("s-avoid").value.split(",").map(function(x){return x.trim()}).filter(Boolean),aiInstructions:document.getElementById("s-ai-profile").value.trim()},country:document.getElementById("s-country").value.trim(),state:document.getElementById("s-state").value.trim(),city:document.getElementById("s-city").value.trim(),localLanguages:document.getElementById("s-local").value.split(",").map(function(x){return x.trim()}).filter(Boolean),googlePlaceId:document.getElementById("s-place").value.trim(),imageUrl:document.getElementById("s-img").value.trim(),languageConfig:{mode:document.getElementById("s-langmode").value,languages:langs},reviewConfig:{minWords:Number(document.getElementById("s-min").value||18),maxWords:Number(document.getElementById("s-max").value||45),tone:document.getElementById("s-tone").value.trim(),style:document.getElementById("s-style").value.trim(),emoji:document.getElementById("s-emoji").value==="true",customInstructions:document.getElementById("s-inst").value.trim()},subscription:{plan:document.getElementById("s-plan").value,status:document.getElementById("s-status").value,startDate:document.getElementById("s-start").value,endDate:document.getElementById("s-end").value,reviewLimit:Number(document.getElementById("s-limit").value||0),reviewsUsed:Number(document.getElementById("s-used").value||0)},questions:collectSettingsQuestions()};
+ var body={name:document.getElementById("s-name").value.trim(),type:document.getElementById("s-type").value,description:document.getElementById("s-desc").value.trim(),businessProfile:{summary:document.getElementById("s-summary").value.trim(),services:document.getElementById("s-services").value.split(",").map(function(x){return x.trim()}).filter(Boolean),specialties:document.getElementById("s-specialties").value.split(",").map(function(x){return x.trim()}).filter(Boolean),amenities:document.getElementById("s-amenities").value.split(",").map(function(x){return x.trim()}).filter(Boolean),targetAudience:document.getElementById("s-audience").value.trim(),differentiators:document.getElementById("s-diff").value.split(",").map(function(x){return x.trim()}).filter(Boolean),reviewFocus:document.getElementById("s-focus").value.split(",").map(function(x){return x.trim()}).filter(Boolean),localContext:document.getElementById("s-context").value.trim(),avoidClaims:document.getElementById("s-avoid").value.split(",").map(function(x){return x.trim()}).filter(Boolean),aiInstructions:document.getElementById("s-ai-profile").value.trim()},country:document.getElementById("s-country").value.trim(),state:document.getElementById("s-state").value.trim(),city:document.getElementById("s-city").value.trim(),localLanguages:document.getElementById("s-local").value.split(",").map(function(x){return x.trim()}).filter(Boolean),googlePlaceId:document.getElementById("s-place").value.trim(),googleReviewUrl:(document.getElementById("s-revurl")?document.getElementById("s-revurl").value.trim():""),imageUrl:document.getElementById("s-img").value.trim(),languageConfig:{mode:document.getElementById("s-langmode").value,languages:langs},reviewConfig:{minWords:Number(document.getElementById("s-min").value||18),maxWords:Number(document.getElementById("s-max").value||45),tone:document.getElementById("s-tone").value.trim(),style:document.getElementById("s-style").value.trim(),emoji:document.getElementById("s-emoji").value==="true",customInstructions:document.getElementById("s-inst").value.trim()},subscription:{plan:document.getElementById("s-plan").value,status:document.getElementById("s-status").value,startDate:document.getElementById("s-start").value,endDate:document.getElementById("s-end").value,reviewLimit:Number(document.getElementById("s-limit").value||0),reviewsUsed:Number(document.getElementById("s-used").value||0)},questions:collectSettingsQuestions()};
  try{var r=await adminFetch(API+"/business/"+encodeURIComponent(settingsBusinessId),{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}),d=await safeJson(r);if(!r.ok||!d)throw new Error((d&&d.error)||"Save failed ("+r.status+")");toast("All settings saved ✓","teal","✓");closeModal("settingsModal");await loadBiz();goto("businesses");}catch(e){toast(e.message,"coral","✕");}
 }
 async function deleteBusiness(){if(!confirm("Delete business + reviews + analytics?"))return;try{var r=await adminFetch(API+"/business/"+encodeURIComponent(settingsBusinessId),{method:"DELETE"});if(!r.ok)throw new Error("Delete failed");toast("Business deleted","teal","🗑");closeModal("settingsModal");await loadBiz();goto("businesses");}catch(e){toast(e.message,"coral","✕");}}
@@ -910,6 +981,7 @@ async function addBusiness() {
     description: document.getElementById("f-desc").value.trim(),
     imageUrl: document.getElementById("f-img").value.trim(),
     googlePlaceId: document.getElementById("f-place").value.trim(),
+    googleReviewUrl: document.getElementById("f-revurl") ? document.getElementById("f-revurl").value.trim() : "",
     address: document.getElementById("f-addr").value.trim(),
     phone: document.getElementById("f-phone").value.trim(),
     country: document.getElementById("f-country").value.trim(),
@@ -919,10 +991,11 @@ async function addBusiness() {
     businessProfile:{summary:document.getElementById("f-summary").value.trim(),services:document.getElementById("f-services").value.split(",").map(function(x){return x.trim()}).filter(Boolean),specialties:document.getElementById("f-specialties").value.split(",").map(function(x){return x.trim()}).filter(Boolean),amenities:document.getElementById("f-amenities").value.split(",").map(function(x){return x.trim()}).filter(Boolean),targetAudience:document.getElementById("f-audience").value.trim(),differentiators:document.getElementById("f-diff").value.split(",").map(function(x){return x.trim()}).filter(Boolean),reviewFocus:document.getElementById("f-focus").value.split(",").map(function(x){return x.trim()}).filter(Boolean),localContext:document.getElementById("f-context").value.trim(),avoidClaims:document.getElementById("f-avoid").value.split(",").map(function(x){return x.trim()}).filter(Boolean),aiInstructions:document.getElementById("f-ai").value.trim()},
     languageConfig:{mode:document.getElementById("f-langmode").value,languages:document.getElementById("f-langs").value.split(",").map(function(x){var p=x.split(":");return {code:p[0].trim().toLowerCase().replace(/\s+/g,"_"),label:p[0].trim(),weight:Number(p[1]||0)}}).filter(function(x){return x.label})},
     reviewConfig:{minWords:Number(document.getElementById("f-min").value||18),maxWords:Number(document.getElementById("f-max").value||60),tone:document.getElementById("f-tone").value.trim(),style:document.getElementById("f-style").value.trim(),emoji:true,customInstructions:document.getElementById("f-ai").value.trim()},
-    subscription:{plan:document.getElementById("f-plan").value,status:"trial",startDate:document.getElementById("f-start").value||new Date().toISOString(),endDate:document.getElementById("f-end").value||new Date(Date.now()+30*24*60*60*1000).toISOString(),reviewLimit:Number(document.getElementById("f-limit").value||1000),reviewsUsed:0},
+    subscription:{plan:document.getElementById("f-plan").value,status:(document.getElementById("f-status") ? document.getElementById("f-status").value : "active"),startDate:document.getElementById("f-start").value||new Date().toISOString(),endDate:document.getElementById("f-end").value||new Date(Date.now()+365*24*60*60*1000).toISOString(),reviewLimit:Number(document.getElementById("f-limit").value||1000),reviewsUsed:0},
     questions:document.getElementById("f-questions").value.split("\n").map(function(line,i){var p=line.split("|"),text=(p[0]||"").trim(),opts=(p[1]||"").split(",").map(function(x){return x.trim()}).filter(Boolean);return {id:"q"+(i+1),text:text,type:"single",required:false,enabled:true,order:i,options:opts.map(function(x){return {label:x,value:x,sentiment:""}})}}).filter(function(q){return q.text})
   };
-  if (!body.id||!body.name||!body.googlePlaceId) { toast("ID, Name, Place ID required","coral","✕"); return; }
+  if (!body.id||!body.name) { toast("Business ID and Name required","coral","✕"); return; }
+  if (!body.googlePlaceId && !body.googleReviewUrl) { toast("Provide Google Review Link or Place ID","coral","✕"); return; }
   if (!/^[a-z0-9-]+$/.test(body.id)) { toast("ID mein sirf lowercase aur hyphens","coral","✕"); return; }
   try {
     var r = await adminFetch(API+"/business",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
