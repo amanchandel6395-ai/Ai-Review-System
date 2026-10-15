@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "https://ai-review-system-1.onrender.com/api/$1" },
+    { "source": "/config.js", "destination": "/Frontend/config.js" },
+    { "source": "/admin", "destination": "/Frontend/admin.html" },
+    { "source": "/admin/(.*)", "destination": "/Frontend/admin.html" },
+    { "source": "/review/(.*)", "destination": "/Frontend/review.html" },
+    { "source": "/", "destination": "/Frontend/index.html" },
+    { "source": "/(.*)", "destination": "/Frontend/$1" }
+  ]
+}

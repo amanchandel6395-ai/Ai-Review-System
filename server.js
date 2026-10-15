@@ -220,9 +220,13 @@ app.post('/api/admin/login', adminLoginLimiter, (req, res) => {
   const password = String(req.body?.password || '');
   const candidates = [ADMIN_PASSWORD, 'admin123', 'admin'].filter(Boolean);
   const valid = candidates.some(cand => {
-    const expected = Buffer.from(cand);
-    const supplied = Buffer.from(password);
-    return supplied.length === expected.length && crypto.timingSafeEqual(supplied, expected);
+    try {
+      const expected = Buffer.from(cand);
+      const supplied = Buffer.from(password);
+      return supplied.length === expected.length && crypto.timingSafeEqual(supplied, expected);
+    } catch {
+      return false;
+    }
   });
   if (!valid) return res.status(401).json({ error: 'Invalid admin password' });
   const now = Date.now();

@@ -1,6 +1,7 @@
 {
-  "routes": [
-    { "src": "/admin", "dest": "/admin.html" },
-    { "src": "/review/(.*)", "dest": "/review.html" }
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "https://ai-review-system-1.onrender.com/api/$1" },
+    { "source": "/admin", "destination": "/admin.html" },
+    { "source": "/review/(.*)", "destination": "/review.html" }
   ]
 }

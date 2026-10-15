@@ -6,6 +6,7 @@
 <title>Zuit — Share Your Experience</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet"/>
+<script src="/config.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -246,7 +247,16 @@ body{background:var(--bg);color:var(--w);font-family:var(--f);min-height:100vh;o
   <div id="ct" style="display:none"></div>
 </div>
 <script>
-const API = window.API_BASE || '/api';
+let _storedApi = localStorage.getItem('API_BASE') || '';
+if (_storedApi === '/api' && window.RENDER_BACKEND_URL) {
+  _storedApi = window.RENDER_BACKEND_URL.replace(/\/+$/, '') + '/api';
+}
+const API = (new URLSearchParams(location.search).get('api'))
+  || (new URLSearchParams(location.search).get('backend') ? (new URLSearchParams(location.search).get('backend').replace(/\/+$/, '') + '/api') : '')
+  || (_storedApi ? (_storedApi.endsWith('/api') ? _storedApi : _storedApi + '/api') : '')
+  || (window.RENDER_BACKEND_URL ? (window.RENDER_BACKEND_URL.replace(/\/+$/, '') + '/api') : '')
+  || window.API_BASE
+  || '/api';
 let MAX_W=65;
 const ICONS={restaurant:'🍽️',hotel:'🏨',salon:'💇',bar:'🍸',hospital:'🏥',cafe:'☕',gym:'💪',spa:'🧖',retail:'🛍️',clothing:'👗',other:'⭐'};
 const MOODS={1:'Ugh, that bad? 😬',2:'Not great at all 😕',3:'It was just okay 😐',4:'Pretty good! 😊',5:'Absolutely loved it! 🤩'};
@@ -479,6 +489,8 @@ async function fetchBiz(id){
     const r=await fetch(`${API}/business/${id}`,{signal:AbortSignal.timeout(5000)});
     pgbar(70);
     if(!r.ok)throw new Error('Not found');
+    const ct = r.headers.get('content-type') || '';
+    if (!ct.includes('application/json')) throw new Error('Not found');
     const d=await r.json();
     if(d.business?.reviewConfig?.maxWords)MAX_W=Math.min(80,Math.max(10,Number(d.business.reviewConfig.maxWords)));
     return d;
@@ -517,8 +529,16 @@ async function generate(){
         seed:Date.now() + Math.random()
       })
     });
-    const d=await r.json();
-    if(!r.ok){const err=new Error(d.error||'Failed');err.status=r.status;throw err;}
+    let d = null;
+    const ct = r.headers.get('content-type') || '';
+    if (ct.includes('application/json')) {
+      try { d = await r.json(); } catch(err){}
+    }
+    if(!r.ok || !d){
+      const err=new Error((d && d.error) || ('Server returned ' + r.status));
+      err.status=r.status;
+      throw err;
+    }
     S.review=d.review;
   }catch(e){
     const net=e.name==='TypeError'||e.name==='AbortError';

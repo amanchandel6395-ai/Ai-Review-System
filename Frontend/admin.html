@@ -6,6 +6,7 @@
   <title>Zuit Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <script src="/config.js"></script>
   <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -194,6 +195,28 @@ body{background:var(--bg);color:var(--white);font-family:var(--ff-body);-webkit-
       onkeydown="if(event.key==='Enter')doLogin()"/>
     <button class="login-btn" onclick="doLogin()">&#x1F510; Login</button>
     <div class="login-err" id="loginErr">&#x274C; Wrong password. Try again.</div>
+
+    <!-- RENDER BACKEND CONFIG -->
+    <div style="margin-top:20px;padding:14px;border-radius:14px;background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.08);text-align:left;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">🌐 Backend API (Render)</span>
+        <span id="apiStatusBadge" style="font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(0,229,204,0.12);color:var(--teal);font-weight:600;">Checking...</span>
+      </div>
+      <div style="font-size:11.5px;color:var(--muted);line-height:1.4;margin-bottom:8px;" id="apiHintText">
+        Render backend URL yaha paste karein (agar Vercel par frontend hai):
+      </div>
+      <div style="display:flex;gap:6px;">
+        <input type="text" id="apiBaseInp" class="login-inp" style="margin-bottom:0;padding:8px 10px;font-size:12px;flex:1;" placeholder="https://your-service.onrender.com" />
+        <button class="btn btn-teal" style="padding:8px 12px;font-size:11px;white-space:nowrap;" onclick="saveApiConfig()">Connect</button>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:8px;align-items:center;justify-content:space-between;">
+        <span style="font-size:10.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px;" id="apiLabelDisplay">/api</span>
+        <div style="display:flex;gap:4px;">
+          <button class="mini-btn" style="font-size:10px;padding:3px 7px;" onclick="testApiConnection()">Test ⚡</button>
+          <button class="mini-btn" style="font-size:10px;padding:3px 7px;" onclick="resetApiConfig()">Reset</button>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -326,7 +349,109 @@ async function adminFetch(url, options) {
   }
   return r;
 }
-var API      = window.API_BASE || "/api";
+
+async function safeJson(r) {
+  const ct = r.headers.get("content-type") || "";
+  if (ct.includes("application/json")) {
+    try { return await r.json(); } catch(e){}
+  }
+  return null;
+}
+
+function normalizeApiUrl(url) {
+  if (!url) return "/api";
+  url = url.trim().replace(/\/+$/, "");
+  if (url === "/api" || url === "") return "/api";
+  if (!url.endsWith("/api")) {
+    url = url + "/api";
+  }
+  return url;
+}
+
+var urlParam = new URLSearchParams(location.search).get("api") || new URLSearchParams(location.search).get("backend");
+if (urlParam) {
+  localStorage.setItem("API_BASE", normalizeApiUrl(urlParam));
+}
+
+var stored = localStorage.getItem("API_BASE") || "";
+if ((!stored || stored === "/api") && window.RENDER_BACKEND_URL) {
+  stored = normalizeApiUrl(window.RENDER_BACKEND_URL);
+  localStorage.setItem("API_BASE", stored);
+}
+
+var API = (urlParam ? normalizeApiUrl(urlParam) : "")
+  || (stored ? normalizeApiUrl(stored) : "")
+  || (window.RENDER_BACKEND_URL ? normalizeApiUrl(window.RENDER_BACKEND_URL) : "")
+  || (window.API_BASE ? normalizeApiUrl(window.API_BASE) : "")
+  || "https://ai-review-system-1.onrender.com/api";
+
+function updateApiDisplay() {
+  var el = document.getElementById("apiLabelDisplay");
+  if (el) el.textContent = API;
+  var inp = document.getElementById("apiBaseInp");
+  if (inp && !inp.value) {
+    inp.value = API === "/api" ? "" : API.replace(/\/api$/, "");
+  }
+  var badge = document.getElementById("apiStatusBadge");
+  if (badge) {
+    if (API.includes("onrender.com") || API.startsWith("http")) {
+      badge.textContent = "Render URL Set ✓";
+      badge.style.background = "rgba(0,229,204,0.15)";
+      badge.style.color = "var(--teal)";
+    } else if (location.hostname.includes("vercel.app") && API === "/api") {
+      badge.textContent = "Vercel /api (Connect Render)";
+      badge.style.background = "rgba(255,90,53,0.15)";
+      badge.style.color = "#FF8260";
+    } else {
+      badge.textContent = "Connected: " + API;
+      badge.style.background = "rgba(0,229,204,0.1)";
+      badge.style.color = "var(--teal)";
+    }
+  }
+}
+
+async function saveApiConfig() {
+  var inp = document.getElementById("apiBaseInp");
+  var val = (inp.value || "").trim();
+  if (!val) {
+    resetApiConfig();
+    return;
+  }
+  var normalized = normalizeApiUrl(val);
+  API = normalized;
+  localStorage.setItem("API_BASE", normalized);
+  updateApiDisplay();
+  toast("Render URL saved: " + normalized, "teal", "⚙️");
+  await testApiConnection();
+}
+
+function resetApiConfig() {
+  API = "/api";
+  localStorage.removeItem("API_BASE");
+  var inp = document.getElementById("apiBaseInp");
+  if (inp) inp.value = "";
+  updateApiDisplay();
+  toast("Server URL reset to /api", "teal", "🔄");
+}
+
+async function testApiConnection() {
+  var badge = document.getElementById("apiStatusBadge");
+  if (badge) { badge.textContent = "Testing..."; badge.style.color = "var(--muted)"; }
+  try {
+    var testUrl = API.replace(/\/api$/, "") + "/api/health";
+    var r = await fetch(testUrl, { signal: AbortSignal.timeout(8000) });
+    if (r.ok) {
+      if (badge) { badge.textContent = "Online ✓"; badge.style.color = "var(--teal)"; badge.style.background = "rgba(0,229,204,0.15)"; }
+      toast("Backend connected successfully! ✓", "teal", "⚡");
+    } else {
+      if (badge) { badge.textContent = "HTTP " + r.status; badge.style.color = "#FF8260"; }
+      toast("Backend reached but returned HTTP " + r.status, "coral", "⚠️");
+    }
+  } catch(e) {
+    if (badge) { badge.textContent = "Offline / Sleeping"; badge.style.color = "#FF8260"; }
+    toast("Backend connect nahi hua. Agar Render free tier hai toh 45s wait karein (spin-up ho raha hai).", "coral", "⏳");
+  }
+}
 
 var businesses   = [];
 var currentTab   = "home";
@@ -337,27 +462,64 @@ var ICONS = {restaurant:"🍽️",hotel:"🏨",salon:"💇",bar:"🍸",hospital:
 
 /* AUTH */
 async function doLogin() {
-  var pw = document.getElementById("adminPw").value;
+  var pw = (document.getElementById("adminPw").value || "").trim();
+  var err = document.getElementById("loginErr");
+  if (!pw) {
+    err.textContent = "Please enter admin password";
+    err.style.display = "block";
+    return;
+  }
+  var loginBtn = document.querySelector(".login-btn");
+  if (loginBtn) { loginBtn.textContent = "Logging in… (Connecting)"; loginBtn.disabled = true; }
   try {
     var r = await fetch(API + "/admin/login", {
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({password:pw})
+      body:JSON.stringify({password:pw}),
+      signal: AbortSignal.timeout(25000)
     });
+
+    // Check if response is HTML (e.g. Vercel 404 "The page could not be found")
+    var ct = r.headers.get("content-type") || "";
+    if (!ct.includes("application/json")) {
+      var text = "";
+      try { text = await r.text(); } catch(e){}
+      if (r.status === 404 || text.includes("The page could not be found")) {
+        throw new Error("⚠️ Vercel par backend nahi mila! Aapka backend Render par hai, kripya niche apna Render URL daal kar 'Connect' karein.");
+      }
+      throw new Error("Backend non-JSON response (" + (text.slice(0, 30) || r.status) + "). Render URL check karein.");
+    }
+
     var d = await r.json();
-    if (!r.ok) throw new Error(d.error || "Login failed");
+    if (!r.ok) {
+      if (r.status === 401) {
+        throw new Error("Wrong admin password. Default password: admin123");
+      }
+      throw new Error((d && d.error) || ("Login failed (HTTP " + r.status + ")"));
+    }
+    if (!d || !d.token) {
+      throw new Error("Server returned non-JSON response. Check API URL.");
+    }
     ADMIN_TOKEN = d.token;
     sessionStorage.setItem(AUTH_KEY, ADMIN_TOKEN);
     document.getElementById("loginScreen").style.display = "none";
     document.getElementById("appShell").style.display = "block";
     initDashboard();
   } catch(e) {
-    var err = document.getElementById("loginErr");
     err.textContent = e.message || "Invalid password";
     err.style.display = "block";
     document.getElementById("adminPw").value = "";
     document.getElementById("adminPw").focus();
-    setTimeout(function(){ err.style.display = "none"; }, 3000);
+    if (e.message && (e.message.includes("Render") || e.message.includes("Vercel") || e.message.includes("Failed to fetch") || e.message.includes("NetworkError"))) {
+      var apiInp = document.getElementById("apiBaseInp");
+      if (apiInp) {
+        apiInp.style.borderColor = "var(--coral)";
+        apiInp.focus();
+      }
+    }
+    setTimeout(function(){ err.style.display = "none"; }, 8000);
+  } finally {
+    if (loginBtn) { loginBtn.textContent = "🔑 Login"; loginBtn.disabled = false; }
   }
 }
 
@@ -395,8 +557,8 @@ function goto(tab) {
 async function loadBiz() {
   try {
     var r = await adminFetch(API + "/businesses");
-    var d = await r.json();
-    businesses = d.businesses || [];
+    var d = await safeJson(r);
+    businesses = (d && d.businesses) || [];
   } catch(e) { businesses = []; }
 }
 
@@ -482,7 +644,8 @@ async function showQR(id, name) {
   try {
     var base = window.location.origin;
     var r = await adminFetch(API + "/qr/" + id + "?baseUrl=" + encodeURIComponent(base));
-    var d = await r.json();
+    var d = await safeJson(r);
+    if (!d || !d.qrDataUrl) throw new Error("Failed to load QR");
     document.getElementById("qrImg").src = d.qrDataUrl;
     var autoUrl = d.reviewUrl + (d.reviewUrl.indexOf("?") > -1 ? "&" : "?") + "auto=1";
     document.getElementById("qrUrlBox").textContent = autoUrl;
@@ -548,10 +711,10 @@ async function loadAnalytics(id, name, btn) {
   el.innerHTML = '<div class="card"><div class="skel" style="height:200px"></div></div>';
   try {
     var r = await adminFetch(API + "/analytics/" + id);
-    var d = await r.json();
-    var s = d.summary;
+    var d = await safeJson(r);
+    var s = d && d.summary;
     if (!s) { el.innerHTML = '<div class="card">' + emptyHTML("No data yet","Koi review nahi aaya","") + "</div>"; return; }
-    var bars = d.ratingDist.slice().reverse().map(function(rv) {
+    var bars = (d.ratingDist||[]).slice().reverse().map(function(rv) {
       var pct = s.total ? (rv.count/s.total*100).toFixed(0) : 0;
       return '<div class="rating-bar-row"><div class="rb-label">' + rv.stars + '★</div><div class="rb-track"><div class="rb-fill" style="width:' + pct + '%"></div></div><div class="rb-count">' + rv.count + "</div></div>";
     }).join("");
@@ -573,9 +736,9 @@ async function loadReviews(filter) {
     if (reviewFilter === "positive") url += "?type=positive";
     else if (reviewFilter === "negative") url += "?type=negative";
     var r = await adminFetch(url);
-    var d = await r.json();
-    allReviews = d.reviews || [];
-    renderReviewsPage(d.stats || {});
+    var d = await safeJson(r);
+    allReviews = (d && d.reviews) || [];
+    renderReviewsPage((d && d.stats) || {});
   } catch(e) {
     mc.innerHTML = '<div class="page-header"><div class="page-title">Reviews 📋</div></div><div class="card"><div style="text-align:center;padding:40px;color:var(--muted)">Backend connect nahi hua.</div></div>';
   }
@@ -695,8 +858,8 @@ var settingsBusinessId=null,settingsQuestions=[];
 function esc(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 async function openSettings(id){
  settingsBusinessId=id;document.getElementById("settingsModal").classList.add("show");document.getElementById("settingsBody").innerHTML='<div class="skel" style="height:500px"></div>';
- try{var r=await adminFetch(API+"/business/"+encodeURIComponent(id)+"/admin"),d=await r.json();if(!r.ok)throw new Error(d.error);renderSettings(d.business);}
- catch(e){document.getElementById("settingsBody").innerHTML='<div class="empty"><div class="empty-title">Could not load</div><div class="empty-sub">'+esc(e.message)+'</div></div>';}
+  try{var r=await adminFetch(API+"/business/"+encodeURIComponent(id)+"/admin"),d=await safeJson(r);if(!r.ok||!d)throw new Error((d&&d.error)||"Could not load ("+r.status+")");renderSettings(d.business);}
+  catch(e){document.getElementById("settingsBody").innerHTML='<div class="empty"><div class="empty-title">Could not load</div><div class="empty-sub">'+esc(e.message)+'</div></div>';}
 }
 function renderSettings(b){
  settingsQuestions=(b.questions||[]).map(q=>JSON.parse(JSON.stringify(q)));var langs=b.languageConfig?.languages||[];
@@ -731,7 +894,7 @@ function collectSettingsQuestions(){return Array.from(document.querySelectorAll(
 async function saveSettings(){
  var langs=Array.from(document.querySelectorAll(".lang-row")).map(function(r){var label=r.querySelector(".sl-lang").value.trim();return {code:label.toLowerCase().replace(/\s+/g,"_"),label:label,weight:Number(r.querySelector(".sl-weight").value||0)}}).filter(function(x){return x.label});
  var body={name:document.getElementById("s-name").value.trim(),type:document.getElementById("s-type").value,description:document.getElementById("s-desc").value.trim(),businessProfile:{summary:document.getElementById("s-summary").value.trim(),services:document.getElementById("s-services").value.split(",").map(function(x){return x.trim()}).filter(Boolean),specialties:document.getElementById("s-specialties").value.split(",").map(function(x){return x.trim()}).filter(Boolean),amenities:document.getElementById("s-amenities").value.split(",").map(function(x){return x.trim()}).filter(Boolean),targetAudience:document.getElementById("s-audience").value.trim(),differentiators:document.getElementById("s-diff").value.split(",").map(function(x){return x.trim()}).filter(Boolean),reviewFocus:document.getElementById("s-focus").value.split(",").map(function(x){return x.trim()}).filter(Boolean),localContext:document.getElementById("s-context").value.trim(),avoidClaims:document.getElementById("s-avoid").value.split(",").map(function(x){return x.trim()}).filter(Boolean),aiInstructions:document.getElementById("s-ai-profile").value.trim()},country:document.getElementById("s-country").value.trim(),state:document.getElementById("s-state").value.trim(),city:document.getElementById("s-city").value.trim(),localLanguages:document.getElementById("s-local").value.split(",").map(function(x){return x.trim()}).filter(Boolean),googlePlaceId:document.getElementById("s-place").value.trim(),imageUrl:document.getElementById("s-img").value.trim(),languageConfig:{mode:document.getElementById("s-langmode").value,languages:langs},reviewConfig:{minWords:Number(document.getElementById("s-min").value||18),maxWords:Number(document.getElementById("s-max").value||45),tone:document.getElementById("s-tone").value.trim(),style:document.getElementById("s-style").value.trim(),emoji:document.getElementById("s-emoji").value==="true",customInstructions:document.getElementById("s-inst").value.trim()},subscription:{plan:document.getElementById("s-plan").value,status:document.getElementById("s-status").value,startDate:document.getElementById("s-start").value,endDate:document.getElementById("s-end").value,reviewLimit:Number(document.getElementById("s-limit").value||0),reviewsUsed:Number(document.getElementById("s-used").value||0)},questions:collectSettingsQuestions()};
- try{var r=await adminFetch(API+"/business/"+encodeURIComponent(settingsBusinessId),{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}),d=await r.json();if(!r.ok)throw new Error(d.error||"Save failed");toast("All settings saved ✓","teal","✓");closeModal("settingsModal");await loadBiz();goto("businesses");}catch(e){toast(e.message,"coral","✕");}
+ try{var r=await adminFetch(API+"/business/"+encodeURIComponent(settingsBusinessId),{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}),d=await safeJson(r);if(!r.ok||!d)throw new Error((d&&d.error)||"Save failed ("+r.status+")");toast("All settings saved ✓","teal","✓");closeModal("settingsModal");await loadBiz();goto("businesses");}catch(e){toast(e.message,"coral","✕");}
 }
 async function deleteBusiness(){if(!confirm("Delete business + reviews + analytics?"))return;try{var r=await adminFetch(API+"/business/"+encodeURIComponent(settingsBusinessId),{method:"DELETE"});if(!r.ok)throw new Error("Delete failed");toast("Business deleted","teal","🗑");closeModal("settingsModal");await loadBiz();goto("businesses");}catch(e){toast(e.message,"coral","✕");}}
 
@@ -763,8 +926,8 @@ async function addBusiness() {
   if (!/^[a-z0-9-]+$/.test(body.id)) { toast("ID mein sirf lowercase aur hyphens","coral","✕"); return; }
   try {
     var r = await adminFetch(API+"/business",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
-    var d = await r.json();
-    if (!r.ok) { toast(d.error||"Failed","coral","✕"); return; }
+    var d = await safeJson(r);
+    if (!r.ok||!d) { toast((d&&d.error)||"Failed ("+r.status+")","coral","✕"); return; }
     toast('"'+body.name+'" add ho gaya! 🎉',"teal","✓");
     await loadBiz();
     closeModal("addModal");
@@ -785,6 +948,8 @@ function initDashboard() {
 
 /* BOOT */
 window.addEventListener("DOMContentLoaded", function() {
+  updateApiDisplay();
+  testApiConnection();
   if (sessionStorage.getItem(AUTH_KEY)) {
     document.getElementById("loginScreen").style.display = "none";
     document.getElementById("appShell").style.display    = "block";
